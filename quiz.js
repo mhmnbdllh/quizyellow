@@ -585,8 +585,87 @@
         tag.onerror = function () { if (window.console) console.warn("Quiz: could not load " + url); };
         document.head.appendChild(tag);
     }
+    // ---- diagrams and charts get more room than the quiz column, centred on the screen:
+    // 90% of the screen width (at most 1400 px), 97.5% on phones (600 px or less).
+    // Only when the content column of the theme is centred on the screen, so a block never covers a sidebar;
+    // a block that a theme would cut off keeps the width of the quiz.
+    // A diagram is never drawn smaller than 60% of its own size; a narrower screen scrolls it inside its block.
+    var WIDE_MAX = 1400;
+    var WIDE_PHONE = 600;
+    var WIDE_CENTRE = 0.05; // allowed distance of the column centre from the screen centre: 5% of the column width
+    var WIDE_CENTRE_MIN = 24; // ... but at least 24 px
+    var DIAGRAM_FLOOR = 0.6;
+    var wideBlocks = [];
+    var wideQueued = false;
+    var wideListening = false;
+    function unwide(block) {
+        block.classList.remove("is-wide");
+        block.style.removeProperty("--quiz-wide-width");
+        block.style.removeProperty("--quiz-wide-shift");
+        block.removeAttribute("data-wide-shift");
+    }
+    // true when a wrapper of the theme (not html or body, which clip at the screen edge) cuts the block off
+    function isClipped(block) {
+        var rect = block.getBoundingClientRect();
+        for (var node = block.parentElement; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
+            var style = window.getComputedStyle(node);
+            if (style.overflowX === "visible" && style.overflow === "visible") continue;
+            var edge = node.getBoundingClientRect();
+            if (rect.left < edge.left - 1 || rect.right > edge.right + 1) return true;
+        }
+        return false;
+    }
+    function layoutWide() {
+        wideQueued = false;
+        var screen = document.documentElement.clientWidth;
+        var target = Math.floor(screen <= WIDE_PHONE ? screen * 0.975 : Math.min(screen * 0.9, WIDE_MAX));
+        // read every position first, then write, so the page is laid out only once
+        var plans = wideBlocks.map(function (block) {
+            var parent = block.parentElement;
+            if (!parent || !block.getClientRects().length) return null;
+            var quiz = block.closest(".quiz-container");
+            var column = quiz && quiz.parentElement ? quiz.parentElement.getBoundingClientRect() : null;
+            if (column && Math.abs(column.left + column.width / 2 - screen / 2) > Math.max(WIDE_CENTRE_MIN, column.width * WIDE_CENTRE)) return { wide: false };
+            var style = window.getComputedStyle(parent);
+            var inner = parent.clientWidth - (parseFloat(style.paddingLeft) || 0) - (parseFloat(style.paddingRight) || 0);
+            var shift = parseFloat(block.getAttribute("data-wide-shift")) || 0;
+            var left = block.getBoundingClientRect().left - shift;
+            return { wide: target > inner + 1, shift: Math.round((screen - target) / 2 - left) };
+        });
+        wideBlocks.forEach(function (block, i) {
+            var svg = block.querySelector("svg");
+            var own = svg ? parseFloat(svg.style.maxWidth) : 0;
+            if (own > 0) svg.style.minWidth = Math.round(own * DIAGRAM_FLOOR) + "px";
+            var plan = plans[i];
+            if (!plan) return;
+            if (!plan.wide) { unwide(block); return; }
+            block.classList.add("is-wide");
+            block.style.setProperty("--quiz-wide-width", target + "px");
+            block.style.setProperty("--quiz-wide-shift", plan.shift + "px");
+            block.setAttribute("data-wide-shift", String(plan.shift));
+        });
+        wideBlocks.forEach(function (block) { if (block.classList.contains("is-wide") && isClipped(block)) unwide(block); });
+    }
+    function queueWide() {
+        if (wideQueued) return;
+        wideQueued = true;
+        (window.requestAnimationFrame || function (fn) { return setTimeout(fn, 16); })(layoutWide);
+    }
+    function widen(box) {
+        var blocks = box.querySelectorAll(".quiz-diagram, .quiz-chart");
+        if (!blocks.length) return;
+        Array.prototype.forEach.call(blocks, function (block) { if (wideBlocks.indexOf(block) < 0) wideBlocks.push(block); });
+        if (!wideListening) {
+            wideListening = true;
+            window.addEventListener("resize", queueWide);
+            window.addEventListener("orientationchange", queueWide);
+            window.addEventListener("load", queueWide);
+        }
+        layoutWide();
+    }
     var mediaGuard = false;
     function initMedia(box) {
+        widen(box);
         // Mermaid diagrams: drawn when the page opens, with the library of the site if there is one
         var diagrams = box.querySelectorAll(".quiz-mermaid:not([data-processed])");
         if (diagrams.length) {
@@ -596,8 +675,9 @@
                 try {
                     if (ownLibrary && mermaid.initialize) mermaid.initialize({ startOnLoad: false, securityLevel: "strict" });
                     var nodes = Array.prototype.filter.call(diagrams, function (node) { return !node.getAttribute("data-processed"); });
-                    if (mermaid.run) mermaid.run({ nodes: nodes });
-                    else if (mermaid.init) mermaid.init(undefined, nodes);
+                    var drawn = mermaid.run ? mermaid.run({ nodes: nodes }) : (mermaid.init ? mermaid.init(undefined, nodes) : null);
+                    if (drawn && typeof drawn.then === "function") drawn.then(queueWide, queueWide);
+                    else queueWide();
                 } catch (e) { if (window.console) console.warn("Quiz: diagram", e); }
             };
             if (window.mermaid) draw(false);
@@ -617,6 +697,9 @@
                         try { config = (new Function("return (" + text + "\n);"))(); } catch (err) { config = null; }
                     }
                     if (config && typeof config === "object") {
+                        // the chart fills its block (sized by quiz.css), unless the author decided otherwise
+                        config.options = config.options && typeof config.options === "object" ? config.options : {};
+                        if (config.options.maintainAspectRatio === undefined) config.options.maintainAspectRatio = false;
                         try { new window.Chart(canvas, config); } catch (e) { if (window.console) console.warn("Quiz: chart", e); }
                     }
                 });
