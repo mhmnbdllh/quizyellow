@@ -1,94 +1,77 @@
-# Quiz extension for Yellow
+# Quiz extension for Datenstrom Yellow
 
-Version **0.9.1-custom**
+Version **0.9.1-custom.14**
 
-Multiple-choice and true/false quizzes for Yellow, written as plain text files and placed on a page with one shortcut. Students who pass can create a PDF certificate, which is recorded on the server so it can be verified and reprinted.
+Multiple-choice and true/false quizzes for [Datenstrom Yellow](https://datenstrom.se/yellow/). A quiz is a plain text file; one shortcut puts it on a page. Students who reach the requirements set for the quiz's categories can create a PDF certificate, which is recorded on the server so it can be verified and reprinted.
 
-Built for **formative, process-oriented, low-stakes assessment**: unlimited retakes, nothing stored about students who do not create a certificate, no database, and a light server load.
+The extension is built for **formative, process-oriented, low-stakes assessment**:
 
-## Highlights
-
-- Start popup: questions and time start only after **Start quiz**
-- Multiple choice and true/false, categories with mastery per category, score always 0–100
-- Optional correction for guessing, time limit with a top timer, open/close schedule
-- Every question must be answered; automatic sending when time is up or after three page leaves
-- Copy, print and page-leave protection; answer key never sent to the browser
-- Result kept only in the student's browser: shared result links reveal nothing
-- PDF certificates (one per person per quiz, highest score kept), reprint by number, CSV records, leaderboard
-- Images, audio, video, YouTube, Vimeo, iframes, Mermaid diagrams and Chart.js charts
-- Theme-safe styling, phone layout, reduced-motion support
-
-## Quick start
-
-1. Copy `quiz.php`, `quiz.js` and `quiz.css` to `system/workers/`.
-2. Save `media/quiz/my-quiz.txt`:
-
-```
-= time: 10, pass: 80
-! Read each question carefully.
-1. The capital of France is ___. | Paris | Lyon | Nice | Lille
-2. Water boils at 100 °C at sea level. | 1
-```
-
-3. Put `[quiz my-quiz.txt]` on a Yellow page and open it.
-
-Set your time zone in `system/extensions/yellow-system.ini`, for example `CoreTimezone: Asia/Jakarta`.
-
-## Contents
-
-1. [Overview](#overview)
-2. [Requirements](#requirements)
-3. [Installation](#installation)
-4. [Site Settings (`yellow-system.ini`)](#site-settings-yellow-systemini)
-5. [Shortcuts](#shortcuts)
-6. [Quiz Identity](#quiz-identity)
-7. [Writing a Quiz File](#writing-a-quiz-file)
-8. [Quiz Settings (the `=` Line)](#quiz-settings-the--line)
-9. [Scoring](#scoring)
-10. [The Start Popup](#the-start-popup)
-11. [Taking the Quiz](#taking-the-quiz)
-12. [Leaving the Page](#leaving-the-page)
-13. [Sending the Answers](#sending-the-answers)
-14. [The Result Page](#the-result-page)
-15. [Schedule (Open and Close)](#schedule-open-and-close)
-16. [Certificates](#certificates)
-17. [Reprinting Certificates](#reprinting-certificates)
-18. [Certificate Records (CSV)](#certificate-records-csv)
-19. [Leaderboard](#leaderboard)
-20. [Media, Diagrams and Charts](#media-diagrams-and-charts)
-21. [Stored Data and Privacy](#stored-data-and-privacy)
-22. [Security and Anti-Cheating](#security-and-anti-cheating)
-23. [Appearance](#appearance)
-24. [Languages and Texts](#languages-and-texts)
-25. [Limits and Fixed Values](#limits-and-fixed-values)
-26. [Technical Reference](#technical-reference)
-27. [Troubleshooting](#troubleshooting)
-28. [Appendix: All Texts](#appendix-all-texts)
+- students may retake a quiz as often as they like;
+- nothing is stored on the server about students who do not create a certificate;
+- there is no database, and the server writes a file only when a certificate is created;
+- the interface is always in English.
 
 ---
 
-## Overview
+## Contents
 
-| Feature | Description | See |
-|---|---|---|
-| Start popup | A quiz opens with a popup describing it. Questions and time start only after **Start quiz** | [The Start Popup](#the-start-popup) |
-| Question types | Multiple choice with any number of options, and true/false | [Writing a Quiz File](#writing-a-quiz-file) |
-| Categories | Questions grouped with `@ Name`; mastery is calculated per category | [Writing a Quiz File](#writing-a-quiz-file), [Scoring](#scoring) |
-| Score 0–100 | Always scaled to 0–100, whatever the number of questions | [Scoring](#scoring) |
-| Correction for guessing | Optional penalty for wrong answers; empty answers are not penalised | [Quiz Settings (the `=` Line)](#quiz-settings-the--line), [Scoring](#scoring) |
-| Timer | Light ribbon fixed at the top of the screen that grows warmer as time runs out | [Taking the Quiz](#taking-the-quiz) |
-| Required answers | Every question must be answered before sending, except for automatic sending | [Sending the Answers](#sending-the-answers) |
-| Leave detection | Leaving the page for 10 seconds or more is counted; the third time sends the answers | [Leaving the Page](#leaving-the-page) |
-| Copy and print protection | Right click, selection, copying, dragging and shortcuts are blocked; printing gives a white page with the site name | [Security and Anti-Cheating](#security-and-anti-cheating) |
-| Answer review | Own answers marked, answer key, or result card only | [Quiz Settings (the `=` Line)](#quiz-settings-the--line), [The Result Page](#the-result-page) |
-| Schedule | A quiz can open and close at a date and time | [Schedule (Open and Close)](#schedule-open-and-close) |
-| Certificates | PDF certificate for students who pass; one per person per quiz, highest score kept | [Certificates](#certificates) |
-| Reprint | By the 10-character certificate number, from any device | [Reprinting Certificates](#reprinting-certificates) |
-| Records | One CSV file per quiz with certificate holders, device code and time taken | [Certificate Records (CSV)](#certificate-records-csv) |
-| Leaderboard | Ranking of one quiz on any page | [Leaderboard](#leaderboard) |
-| Media | Images, audio, video, YouTube, Vimeo, iframes, Mermaid diagrams, Chart.js charts | [Media, Diagrams and Charts](#media-diagrams-and-charts) |
-| Theme-safe styling | The quiz is protected against theme styles | [Appearance](#appearance) |
-| Light on the server | No database; files are written only when a certificate is created | [Stored Data and Privacy](#stored-data-and-privacy) |
+1. [Features](#features)
+2. [Requirements](#requirements)
+3. [Installation](#installation)
+4. [Quick start](#quick-start)
+5. [Site settings](#site-settings)
+6. [Shortcuts](#shortcuts)
+7. [Quiz identity](#quiz-identity)
+8. [Writing a quiz file](#writing-a-quiz-file)
+9. [Quiz settings](#quiz-settings)
+10. [Certificate requirements per category](#certificate-requirements-per-category)
+11. [Scoring](#scoring)
+12. [The start popup](#the-start-popup)
+13. [Taking the quiz](#taking-the-quiz)
+14. [Leaving the page](#leaving-the-page)
+15. [Sending the answers](#sending-the-answers)
+16. [The result page](#the-result-page)
+17. [Schedule](#schedule)
+18. [Certificates](#certificates)
+19. [Reprinting certificates](#reprinting-certificates)
+20. [Certificate records](#certificate-records)
+21. [Leaderboard](#leaderboard)
+22. [Media, diagrams and charts](#media-diagrams-and-charts)
+23. [Security](#security)
+24. [Stored data and privacy](#stored-data-and-privacy)
+25. [Appearance](#appearance)
+26. [Texts](#texts)
+27. [How it works](#how-it-works)
+28. [Technical reference](#technical-reference)
+29. [Limits](#limits)
+30. [Troubleshooting](#troubleshooting)
+31. [Credits](#credits)
+32. [Appendix: all texts](#appendix-all-texts)
+
+---
+
+## Features
+
+| Feature | What it does |
+|---|---|
+| Start popup | A quiz opens with a popup that describes it. Questions and time start only after **Start quiz** |
+| Question types | Multiple choice with any number of options, and true/false |
+| Categories | Questions are grouped with `@ Name`; mastery is reported per category |
+| Requirements per category | `@ Name \| pass: 80` makes a category count for the certificate; categories without `pass` still count for the score |
+| Score 0–100 | Always scaled to 0–100, whatever the number of questions |
+| Correction for guessing | Optional: wrong answers lower the score, empty answers do not |
+| Timer | A light ribbon at the top of the screen that grows warmer as time runs out |
+| Required answers | Every question must be answered before sending, except for automatic sending |
+| Page-leave detection | Leaving the page for 10 seconds or more counts; the third time sends the answers |
+| Protection | The answer key is never in the page; times and results are signed; copying and printing are blocked |
+| Review modes | Own answers marked, with the answer key, or the result card only |
+| Schedule | A quiz can open and close at given times |
+| Certificates | PDF certificates; one per person per quiz, highest score kept; reprint by number |
+| Records | One CSV file per quiz with certificate holders, device code and time taken |
+| Leaderboard | A ranking of one quiz on any page |
+| Media | Images, audio, video, YouTube, Vimeo, iframes, Mermaid diagrams, Chart.js charts |
+| Wide diagrams and charts | Wider than the quiz and centred on the screen, readable on phones |
+| Theme-safe | Protected against theme styles; phone layout; reduced-motion support |
 
 ---
 
@@ -96,39 +79,39 @@ Set your time zone in `system/extensions/yellow-system.ini`, for example `CoreTi
 
 | Item | Requirement |
 |---|---|
-| CMS | Datenstrom Yellow (tested with Yellow 1.0.3) |
-| PHP | Must be able to write to `system/workers/` (secret key and data folder). Tested with PHP 8.3 |
-| Browser | JavaScript enabled. Without JavaScript the quiz cannot be taken |
+| CMS | Datenstrom Yellow (tested with 1.0.3) |
+| PHP | Must be able to write to `system/workers/` (tested with PHP 8.3) |
+| Browser | JavaScript enabled; without JavaScript a quiz cannot be taken |
 
 ---
 
 ## Installation
 
-### Files
+1. Copy `quiz.php`, `quiz.js` and `quiz.css` to `system/workers/`.
+2. Put quiz files (`.txt`) in `media/quiz/`.
+3. Set the time zone of the site in `system/extensions/yellow-system.ini`, for example:
 
-| File | Location |
-|---|---|
-| `quiz.php` | `system/workers/quiz.php` |
-| `quiz.js` | `system/workers/quiz.js` |
-| `quiz.css` | `system/workers/quiz.css` |
+```ini
+CoreTimezone: Asia/Jakarta
+```
 
-`quiz.js` and `quiz.css` are added to the `<head>` of **every page** of the site, from the Yellow asset location (`CoreServerBase` + `CoreAssetLocation`). Their addresses end with `?v=0.9.1-custom.11`, so browsers load the new files after an update instead of old copies from their cache.
+`quiz.js` and `quiz.css` are added to the head of every page. Their addresses end with `?v=0.9.1-custom.14`, so browsers load new files after an update instead of old copies from their cache.
 
 ### Files created automatically
 
 | File or folder | Location | Content |
 |---|---|---|
-| `quiz-secret.php` | `system/workers/` | Random 256-bit secret key (64 hexadecimal characters). Created once, the first time a quiz page is opened, unless `QuizSecret` is set |
+| `quiz-secret.php` | `system/workers/` | A random 256-bit key (64 hexadecimal characters), created once when a quiz page is first opened, unless `QuizSecret` is set |
 | `quiz-data/` | `system/workers/quiz-data/` (default) | Certificate records |
-| `quiz-data/.htaccess` | inside the data folder | Denies web access on Apache |
-| `quiz-data/index.html` | inside the data folder | Empty file; also the lock file for writing and the time marker of the automatic clean-up |
-| `<quiz>-<code>.csv` | inside the data folder | One record file per quiz, created with its first certificate |
+| `quiz-data/.htaccess` | in the data folder | Denies web access on Apache |
+| `quiz-data/index.html` | in the data folder | Empty file; also the write lock and the time marker of the automatic clean-up |
+| `<quiz>-<code>.csv` | in the data folder | One record file per quiz, created with its first certificate |
 
 **Do not change or delete `quiz-secret.php` while quizzes are in use.** A new key makes every running attempt and every result stored in browsers invalid. Recorded certificates stay valid and can still be reprinted.
 
 ### nginx
 
-`.htaccess` only works on Apache. On nginx, block the data folder and the key in the server configuration:
+`.htaccess` works only on Apache. On nginx, block the data folder and the key in the server configuration:
 
 ```nginx
 location ~ ^/system/workers/(quiz-data/|quiz-secret\.php) {
@@ -139,61 +122,62 @@ location ~ ^/system/workers/(quiz-data/|quiz-secret\.php) {
 
 If `QuizDataDirectory` points elsewhere, block that folder too.
 
-### First quiz
+---
 
-1. Save a quiz file, for example `media/quiz/my-quiz.txt`:
+## Quick start
+
+`media/quiz/grammar-check.txt`:
 
 ```
-= time: 10, pass: 80
+= time: 10
 ! Read each question carefully.
-1. The capital of France is ___. | Paris | Lyon | Nice | Lille
-2. Water boils at 100 °C at sea level. | 1
+@ Grammar | pass: 60
+1. She ______ to school every day. | goes | go | going | gone
+2. They ______ finished their work yet. | haven't | hasn't | didn't | isn't
+- "Information" is an uncountable noun. | 1
 ```
 
-2. Write this in a Yellow page:
+On a Yellow page:
 
 ```
-[quiz my-quiz.txt]
+[quiz grammar-check.txt]
 ```
 
-3. Open the page. The start popup appears.
+The popup shows "Grammar: at least 2 of 3 right". A student who answers at least two questions correctly can create a certificate.
 
 ---
 
-## Site Settings (`yellow-system.ini`)
+## Site settings
 
-Settings are written in `system/extensions/yellow-system.ini` as `Name: value`. Missing settings use their default.
-
-### Quiz settings
+Written in `system/extensions/yellow-system.ini` as `Name: value`. Missing settings use their default.
 
 | Setting | Default | Allowed values | Meaning |
 |---|---|---|---|
-| `QuizDirectory` | `media/quiz/` | Folder ending with `/` | Folder of the quiz files. `[quiz file.txt]` looks for the file in this folder. Files outside it are always refused |
-| `QuizPass` | empty (= 80) | `0`–`100` | Default pass mark for quizzes without their own `pass`. `0` means every attempt sent in time may get a certificate. Empty, non-numeric or out-of-range values mean 80 |
-| `QuizCertificateKeepDays` | `30` | `0`, or a number of days | How long certificate records are kept. After that, records are removed and cannot be reprinted. `0` keeps them forever. Fractions are rounded up (minimum 1 day). Empty, negative or non-numeric values mean 30. A change applies to all records, including existing ones |
-| `QuizSecret` | empty | Text of at least 16 characters | Own secret key. When empty or shorter than 16 characters, the generated `quiz-secret.php` is used. Usually not needed; useful when PHP cannot write to `system/workers/` or the site runs on several servers |
-| `QuizDataDirectory` | empty (= `system/workers/quiz-data/`) | Folder | Where certificate records are stored. Created automatically. Must be writable by PHP and closed to web access |
-| `QuizMermaidUrl` | `https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js` | Address of a JavaScript file | Mermaid library for diagrams. Loaded only by quizzes with a ` ```mermaid ` block, and only when the page does not already have Mermaid |
-| `QuizChartUrl` | `https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js` | Address of a JavaScript file | Chart.js library for charts. Loaded only by quizzes with a ` ```chartjs ` block, and only when the page does not already have Chart.js |
+| `QuizDirectory` | `media/quiz/` | A folder ending with `/` | Folder of the quiz files. Files outside it are always refused |
+| `QuizCertificateKeepDays` | `30` | `0`, or a number of days | How long certificate records are kept. After that they are removed and cannot be reprinted. `0` keeps them forever. Fractions are rounded up (at least 1 day). Empty, negative or non-numeric values mean 30. A change applies to all records, existing ones included |
+| `QuizSecret` | empty | Text of at least 16 characters | An own secret key. Empty or shorter than 16 characters: the generated `quiz-secret.php` is used. Useful when PHP cannot write to `system/workers/`, or when a site runs on several servers |
+| `QuizDataDirectory` | empty (= `system/workers/quiz-data/`) | A folder | Where certificate records are stored. Created automatically; must be writable by PHP and closed to web access |
+| `QuizMermaidUrl` | `https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js` | Address of a JavaScript file | Mermaid library for diagrams. Loaded only by quizzes that contain a diagram, and only when the page does not already have Mermaid |
+| `QuizChartUrl` | `https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js` | Address of a JavaScript file | Chart.js library for charts. Loaded only by quizzes that contain a chart, and only when the page does not already have Chart.js |
 
 ### Yellow settings used by the quiz
 
 | Setting | Used for |
 |---|---|
-| `CoreTimezone` | Time zone of `open` and `close`, of the times in the closing banner, and of the date stored with each certificate. **Set it correctly**, for example `CoreTimezone: Asia/Jakarta`. With `UTC`, "08:00" means 15:00 in Jakarta |
+| `CoreTimezone` | Time zone of `open` and `close`, of the times in the closing banner, and of the date stored with each certificate. With `UTC`, "08:00" means 15:00 in Jakarta |
 | `Sitename` | Printed at the top of the certificate and around its stamp; printed alone when a quiz page is printed |
-| `Language` (site or page) | Language of the quiz texts on the question and result pages (section [Languages and Texts](#languages-and-texts)) |
 | `CoreServerBase`, `CoreAssetLocation` | Where `quiz.js` and `quiz.css` are loaded from |
+
+The page or site `Language` setting does not change the quiz: it is always in English.
 
 ### Recommended settings
 
 ```ini
 CoreTimezone: Asia/Jakarta
-QuizPass: 80
 QuizCertificateKeepDays: 180
 ```
 
-`QuizCertificateKeepDays: 180` (or `0`) is recommended when certificates are collected over a semester. With 30 days, certificates from the beginning of the semester are removed before it ends.
+Use 180 (or `0`) when certificates are collected during a semester; with 30 days, certificates from the beginning of the semester are removed before it ends.
 
 ---
 
@@ -209,14 +193,14 @@ QuizCertificateKeepDays: 180
 
 | Part | Required | Meaning |
 |---|---|---|
-| `file.txt` | yes | Quiz file inside `QuizDirectory`, subfolders allowed. Must start with a letter or digit and may contain only letters, digits, `_`, `-`, `.` and `/`. `..` is refused |
-| `"Quiz title"` | no | Title shown in the popup and printed on the certificate. Without it, or with `-`, the page title (`Title`) is used |
+| `file.txt` | yes | Quiz file inside `QuizDirectory`; subfolders allowed. Must start with a letter or digit and may contain only letters, digits, `_`, `-`, `.` and `/`. `..` is refused |
+| `"Quiz title"` | no | Title in the popup and on the certificate. Without it, or with `-`, the page title is used |
 
 | Situation | Result |
 |---|---|
 | File not found, name not allowed, or no valid question | The shortcut shows nothing |
 | More than 300 questions | A notice asks to split the quiz |
-| Secret key cannot be created | A notice explains that the quiz cannot be used yet |
+| The secret key cannot be created | A notice says the quiz cannot be used yet |
 
 Pages with a quiz are sent with `Cache-Control: no-store, max-age=0`, so browsers and proxies never show an old copy.
 
@@ -226,7 +210,7 @@ Pages with a quiz are sent with `Cache-Control: no-store, max-age=0`, so browser
 [quizcertificate]
 ```
 
-No arguments. Shows a form to reprint a certificate by its number (section [Reprinting Certificates](#reprinting-certificates)). The same form is inside every quiz popup (**Reprint it**), so this page is optional.
+No arguments. Shows a form to reprint a certificate by its number. The same form is in every quiz popup (**Reprint it**), so this page is optional.
 
 ### `[quizleaderboard]`: leaderboard
 
@@ -237,48 +221,45 @@ No arguments. Shows a form to reprint a certificate by its number (section [Repr
 
 | Part | Required | Meaning |
 |---|---|---|
-| `file.txt` | yes | The quiz file, written as in `[quiz ...]` |
-| a number | no | Show only this many rows from the top. Without a number, all rows are shown |
-
-A file name that is not allowed shows nothing. Details in section [Leaderboard](#leaderboard).
+| `file.txt` | yes | The quiz file, written as in `[quiz …]` |
+| A number | no | Show only this many rows from the top |
 
 ---
 
-## Quiz Identity
+## Quiz identity
 
-Every quiz has an identity made from **the page address + the quiz file name**.
+A quiz is identified by **the page address + the quiz file name**.
 
-| Situation | Effect |
+| Situation | Result |
 |---|---|
 | The same file on two pages | Two separate quizzes: separate attempts, results and record files. The leaderboard combines them |
-| The page is moved or renamed, or the file is renamed | It becomes a new quiz: running attempts and stored results no longer open, and new certificates go to a new record file. Existing certificates stay reprintable |
-
-Decide the page address and file name before a quiz is used.
+| The page is moved or renamed, or the file is renamed | It becomes a new quiz: running attempts and stored results no longer open; new certificates go to a new record file. Existing certificates stay reprintable |
 
 ---
 
-## Writing a Quiz File
+## Writing a quiz file
 
-A quiz file is a UTF-8 text file in `QuizDirectory`. The extension `.txt` is recommended.
+A quiz file is a UTF-8 text file in `QuizDirectory`.
 
 ### Example
 
 ```
-= time: 20, penalty: 1, shuffle: 1, review: card, pass: 80, minimum: 60, open: 2026-10-01 00:00, close: 2027-12-31 23:59
-! This quiz checks subject–verb agreement at B2 level.
-! Wrong answers lower your score, so do not guess blindly.
-# Concord: Subject–Verb Agreement
+= time: 20, penalty: 0, shuffle: 1, review: 0, open: 2026-10-01 00:00, close: 2027-06-30 23:59
+! This quiz checks subject–verb agreement.
+! You must answer every question before you can submit.
+# Concord
 
-@ Tricky Subjects
+@ Tricky Subjects | pass: 70
 Some subjects look plural but take a singular verb.
 1. The number of applicants ___ increased this year. | has | have | are | were
 2. A number of students ___ complained. | have | has | is | was
-- Mathematics is a plural noun. | 0
+- "Mathematics" takes a plural verb. | 0
 
-@ Phrases between Subject and Verb
-3. The quality of the essays ___ improved. | has | have | are | were
-+ "Here are the documents" is correct. | 1
+@ Practice Corner
+3. Here ___ the documents you asked for. | are | is | was | has been
 ```
+
+Here "Tricky Subjects" decides the certificate (at least 70%), while "Practice Corner" only counts for the score.
 
 ### Line types
 
@@ -286,16 +267,16 @@ The first character of a line decides its type.
 
 | Line starts with | Type | Meaning |
 |---|---|---|
-| `=` | Settings | Quiz settings (section [Quiz Settings (the `=` Line)](#quiz-settings-the--line)). Several `=` lines are combined; a later value replaces an earlier one |
-| `!` | Popup instruction | One instruction line in the start popup. Supports text formatting ([Writing a Quiz File](#writing-a-quiz-file)). A line starting with `![` is media, not an instruction |
-| `@` | Category | Starts a category, e.g. `@ Tricky Subjects`. A `@` line without a name is ignored |
+| `=` | Settings | Quiz settings (see [Quiz settings](#quiz-settings)). Several `=` lines are combined; a later value replaces an earlier one |
+| `!` | Popup instruction | One instruction line in the start popup. Text formatting works. A line starting with `![` is media, not an instruction |
+| `@` | Category | Starts a category: `@ Name` or `@ Name \| pass: 80` (see [Certificate requirements per category](#certificate-requirements-per-category)). A `@` line without a name is ignored |
 | `1.`, `2.`, … | Question | Numbers need not be in order; questions are numbered again on screen |
-| `-`, `+`, `*` followed by a space | Question | A question without a number |
-| `#` to `######` | Heading | Heading inside the quiz (`#` largest, up to six levels) |
-| ` ``` ` | Block | Mermaid diagram, Chart.js chart or code block (section [Media, Diagrams and Charts](#media-diagrams-and-charts)) |
-| `<iframe`, `<audio`, `<video` | Embed | Pasted embed code (section [Media, Diagrams and Charts](#media-diagrams-and-charts)) |
-| anything else | Text | A paragraph |
-| empty line | — | Ignored |
+| `-`, `+`, `*` and a space | Question | A question without a number |
+| `#` to `######` | Heading | A heading in the quiz (six levels) |
+| ` ``` ` | Block | Mermaid diagram, Chart.js chart or code block |
+| `<iframe`, `<audio`, `<video` | Embed | Pasted embed code |
+| Anything else | Text | A paragraph |
+| Empty | — | Ignored |
 
 A line is a question only when it starts with a question marker **and** contains `|`. A line starting with `-` without `|` is a paragraph.
 
@@ -305,11 +286,10 @@ A line is a question only when it starts with a question marker **and** contains
 1. Question text | correct answer | distractor | distractor | distractor
 ```
 
-- Parts are separated by `|`. The character `|` cannot be used inside a question or option.
+- Parts are separated by `|`; the character `|` cannot be used inside a question or an option.
 - **The first option after the question is always the correct answer.**
-- On screen, options are **always shuffled** for every attempt, so the position of the correct answer cannot be predicted.
-- Any number of options; at least two. Four or five are recommended.
-- Option letters (A, B, C…) are added automatically.
+- Options are **always shuffled** on screen for every attempt, so the position of the correct answer cannot be predicted.
+- Any number of options (at least two). Letters A, B, C… are added automatically.
 
 ### True/false questions
 
@@ -318,191 +298,192 @@ A line is a question only when it starts with a question marker **and** contains
 - A false statement. | 0
 ```
 
-| Value after `\|` | Meaning | Correct answer |
+| Value | Meaning | Correct answer |
 |---|---|---|
 | `1` | The statement is true | True |
 | `0` | The statement is false | False |
 
-True is always shown first and False second (never shuffled). The words come from the texts `QuizTrue` and `QuizFalse` in the page language (for example "Benar" and "Salah" in Indonesian).
-
-### Categories
-
-- `@ Name` starts a category. All questions below it belong to it until the next `@` line.
-- Categories keep their order on screen. Questions are numbered continuously across categories.
-- A category without questions is not shown.
-- Without any `@` line, all questions form one unnamed group, and the result shows one mastery figure instead of a list of categories.
-- Questions before the first `@` line in a file that also has named categories form the category **General**.
-- The category name is shown as a heading (H2) above its questions, in the popup ("Parts"), on the result card, on the certificate and in the record file.
+True is always shown first and False second.
 
 ### Text formatting
-
-Works in questions, options, paragraphs, headings and popup instructions.
 
 | Write | Result |
 |---|---|
 | `**bold**` | **bold** |
 | `*italic*` | *italic* |
-| `[text](https://example.com)` | Link (addresses starting with `http://` or `https://`) |
-| `https://example.com` | Automatic link |
-| `![text](address)` | Image, audio, video, YouTube or Vimeo (section [Media, Diagrams and Charts](#media-diagrams-and-charts)) |
-| `\n` | Line break |
+| `[text](https://example.com)` | A link |
+| `https://example.com` | An automatic link |
+| `![text](address)` | An image, audio, video, YouTube or Vimeo (see [Media](#media-diagrams-and-charts)) |
+| `\n` | A line break |
 | `\\` | A backslash |
 
-All other HTML is shown as text and never executed (only `<iframe>`, `<audio>` and `<video>` at the start of a line are embeds).
+Other HTML is shown as text and never executed.
 
 ### Where text and media appear
 
 | Position in the file | Position on screen |
 |---|---|
 | Before the first question and before the first `@` | Opening section, above all categories |
-| Right after `@ Name`, before its first question | Introduction of that category, under its heading |
-| Between two questions | **Travels with the next question.** When questions are shuffled, it stays directly above that question. Use it for a reading text, audio or video that belongs to one question |
+| Right after `@ Name`, before its first question | Introduction of the category, under its heading. **Use this place for a reading text** that belongs to all questions of the category: it always stays on top, also when the questions are shuffled |
+| Between two questions | **Travels with the next question**, also when questions are shuffled |
 | After the last question of a category | End of that category |
 
-**Every category is one block.** Its heading, text, media, diagrams and charts always stay inside it. The same text and media are also shown in the answer review.
+Every category is one block: its heading, text, media, diagrams and charts always stay inside it. The same text and media also appear in the answer review.
 
-### Limit
+### Categories
 
-A quiz may have at most **300 questions**.
+- `@ Name` starts a category; all questions below belong to it until the next `@` line.
+- Categories keep the file order; questions are numbered continuously.
+- A category without questions is not shown.
+- Without any `@` line, all questions form one unnamed group; the result shows one mastery figure and the quiz has **no certificate**.
+- Questions before the first `@` in a file that also has named categories form a category called **General**. General has no `@` line, so it can never have a `pass`: it counts for the score but never for the certificate.
 
 ---
 
-## Quiz Settings (the `=` Line)
+## Quiz settings
 
-### Writing settings
+One or more `=` lines with `name: value` pairs separated by commas, in any order:
 
 ```
-= time: 20, penalty: 1, shuffle: 1, review: card, pass: 80, minimum: 60, open: 2026-10-01 00:00, close: 2027-12-31 23:59
+= time: 90, penalty: 0, shuffle: 1, review: 0, open: 2026-10-10 08:00, close: 2026-10-10 10:00
 ```
 
-- Each setting is `name: value`; settings are separated by commas, in any order.
-- Setting names are not case-sensitive.
-- Missing settings use their default.
-- **Invalid values are ignored without a message**, and the default is used.
+Names are not case-sensitive. Missing settings use their default. **Invalid values are ignored without a message** and the default is used. Unknown names are ignored.
 
-### All settings
-
-| Setting | Default | Allowed values |
+| Setting | Default | Values |
 |---|---|---|
-| `time` | Number of questions (1 minute per question) | `0`, or a whole number of minutes; values above 10080 become 10080 |
+| `time` | number of questions (1 minute each) | `0`, or whole minutes up to `10080` |
 | `penalty` | `0` | `0`, `1` |
 | `shuffle` | `1` | `0`, `1` |
 | `review` | `0` | `0`, `1`, `card` |
-| `pass` | `QuizPass` (80) | `0`–`100` |
-| `minimum` | off | `0`–`100` |
-| `open` | none | Date and time |
-| `close` | none | Date and time |
+| `open` | none | date and time |
+| `close` | none | date and time |
 
-### `time`: time limit
+### `time`
 
 | Value | Meaning |
 |---|---|
-| not set | 1 minute per question (20 questions = 20 minutes) |
+| not set | 1 minute per question |
 | `0` | No time limit; no timer ribbon |
-| `1` to `10080` | Time limit in minutes (10080 = 7 days) |
-| above `10080` (up to 5 digits) | Treated as `10080` |
-| anything else (`twenty`, `-5`, `1.5`) | Ignored: 1 minute per question |
+| `1`–`10080` | Time limit in minutes (10080 = 7 days) |
+| above 10080 (up to 5 digits) | Treated as 10080 |
+| anything else | Ignored: 1 minute per question |
 
-- The time starts when **Start quiz** is pressed, not when the popup is opened.
-- The time is measured by the server; the clock of the student's device does not matter.
-- When the time is up, the answers are sent automatically. Questions not answered score 0.
-- Answers that arrive more than **60 seconds** after the limit are **late**: the score is shown, but there is no certificate.
-- An attempt stays usable for the time limit + 15 minutes; after that, opening the quiz shows the start popup again.
-- A quiz without a time limit that has a closing time follows a special rule ([Schedule (Open and Close)](#schedule-open-and-close)).
+- Time starts when **Start quiz** is pressed and is measured by the server; the device clock does not matter.
+- When time is up, the answers are sent automatically; unanswered questions score 0.
+- Answers arriving more than **60 seconds** after the limit are **late**: the score is shown, but there is no certificate.
+- An attempt stays usable for the time limit + 15 minutes; after that, the popup is shown again.
 
-### `penalty`: correction for guessing
+### `penalty`
 
 | Value | Meaning |
 |---|---|
-| `0` | No penalty. Wrong and empty answers both score 0 |
-| `1` | A wrong answer scores −1 ÷ (number of options − 1). An empty answer scores 0 |
+| `0` | Wrong and empty answers both score 0 |
+| `1` | Correction for guessing: a wrong answer scores −1 ÷ (number of options − 1); an empty answer scores 0 |
 
-See section [Scoring](#scoring).
+Because every question must be answered before sending, students cannot leave uncertain questions empty (except when the answers are sent automatically). With `penalty: 1`, explain this in a `!` line.
 
-### `shuffle`: question order
+### `shuffle`
 
 | Value | Meaning |
 |---|---|
-| `1` | Questions are shuffled for every attempt, **inside their category**. Categories keep the file order |
+| `1` | Questions are shuffled for every attempt **inside their category**; categories keep the file order |
 | `0` | Questions keep the file order |
 
-Options are always shuffled, whatever this setting (true/false questions always show True first). The order of an attempt stays the same after a refresh.
+Options are always shuffled (true/false always shows True first). The order of an attempt stays the same after a refresh.
 
-### `review`: what students see after sending
+### `review`
 
 | Value | Shown after sending |
 |---|---|
-| `0` (default) | The result card, and every question with the student's own answer marked: a right answer in green and bold, a wrong answer in red and struck through. **The correct answer of a wrong or empty question is not shown** |
-| `1` | As `0`, and the correct answer of every wrong or empty question is shown in bold |
-| `card` | **Only the result card**: score, mastery per category, certificate button and messages. Questions, options, answers and key are not shown |
+| `0` | The result card and every question with the student's answer marked: right in green and bold, wrong in red and struck through. **The correct answer of a wrong or empty question is not shown** |
+| `1` | As `0`, plus the correct answer of every wrong or empty question in bold |
+| `card` | **Only the result card**: score, mastery per category, certificate button and messages |
 
-`card` is not case-sensitive (`card`, `Card`, `CARD`). Only the exact values `0`, `1` and `card` are accepted.
+`card` is not case-sensitive. Only `0`, `1` and `card` are accepted.
 
-### `pass`: pass mark
+### `open` and `close`
 
-| Value | Meaning |
+| Format | Example |
 |---|---|
-| not set | `QuizPass`, else 80 |
-| `0` | No score requirement: every attempt sent in time may get a certificate (unless `minimum` is set) |
-| `1` to `100` | Lowest score for a certificate. Decimals allowed, rounded to one decimal |
-
-Passed when **score ≥ pass**. The score is compared after rounding to one decimal: 79.96 is shown as 80 and passes `pass: 80`.
-
-### `minimum`: mastery required in every category
-
-| Value | Meaning |
-|---|---|
-| not set or `0` | Off |
-| `1` to `100` | Every category must reach at least this mastery (%) for a certificate |
-
-Example: `pass: 80, minimum: 60`. A score of 85 with one category at 50% gives **no** certificate; the result card names the category below the minimum.
-
-Without categories, `minimum` is merged into `pass` and the **higher** value applies. Example: `pass: 80, minimum: 90` without categories → a score of 90 is required.
-
-### `open` and `close`: schedule
-
-| Format | Example | Meaning |
-|---|---|---|
-| Date and time | `2026-10-10 08:00` | 10 October 2026, 08:00 |
-| With seconds | `2026-10-10 08:00:30` | 08:00:30 |
-| Date only | `2026-10-10` | 00:00 on that day |
+| Date and time | `2026-10-10 08:00` |
+| With seconds | `2026-10-10 08:00:30` |
+| Date only (00:00) | `2026-10-10` |
 
 | Written | Meaning |
 |---|---|
-| neither | The quiz is always open |
-| only `open` | Opens at that time and never closes |
-| only `close` | Open from the start; closed from that time until `close` is changed or removed |
-| both | Open between the two times |
+| Neither | Always open |
+| Only `open` | Opens at that time, never closes |
+| Only `close` | Open from the start, closed from that time until `close` is changed |
+| Both | Open between the two times |
 
-- Date as year-month-day; 24-hour time; the site time zone (`CoreTimezone`).
-- Impossible dates (`2026-13-45`) and other formats are ignored.
-- To reopen a closed quiz, change or remove `close`.
+24-hour time in the site time zone (`CoreTimezone`). Impossible dates (`2026-13-45`) are ignored. To reopen a closed quiz, change or remove `close`. See [Schedule](#schedule).
 
-Behaviour in section [Schedule (Open and Close)](#schedule-open-and-close).
+---
+
+## Certificate requirements per category
+
+A category becomes a certificate requirement by writing `pass` after its name:
+
+```
+@ Structure — Level 1 | pass: 70
+```
+
+### How to write it
+
+| Written | Meaning |
+|---|---|
+| `@ Name` | The category counts for the score, **not** for the certificate |
+| `@ Name \| pass: 80` | The category must reach at least 80% mastery |
+| `@ Name \| pass: 0` | The category is a requirement that everybody meets (written on purpose) |
+| `@ Name \| Pass : 75.25` | Accepted: names are not case-sensitive, spaces are allowed, decimals are rounded to one decimal (75.3) |
+| `@ Name \| pass: 120`, `pass: abc`, `passing: 80` | Not valid: the category has no requirement |
+
+The category name is the text before `|`.
+
+### When is there a certificate?
+
+| Quiz | Certificate |
+|---|---|
+| No `@` line at all | **No certificate** |
+| `@` categories, but none with `pass` | **No certificate** |
+| At least one category with `pass` | A certificate when **every** category with `pass` reaches its pass mark |
+| All categories with `pass: 0` | A certificate for every attempt sent in time |
+
+Categories without `pass` (and the General category) still count fully for the score and are shown on the result card and the certificate.
+
+### Example
+
+| Category | Questions | `pass` | Requirement |
+|---|---|---|---|
+| Category 1 | 10 | 80 | at least 8 of 10 right |
+| Category 2 | 12 | 60 | at least 8 of 12 right (7 of 12 is only 58.3%) |
+| Category 3 | 3 | — | not required |
+
+| | Category 1 | Category 2 | Category 3 | Score | Certificate |
+|---|---|---|---|---|---|
+| Student A | 9/10 ✓ | 8/12 ✓ | 0/3 | 68 | yes |
+| Student B | 10/10 ✓ | 7/12 ✕ | 3/3 | 80 | no |
+
+Student B has the higher score but no certificate, because Category 2 is required. The score answers "how much of the quiz was mastered"; the certificate answers "was every required category mastered". The result card shows exactly what is missing (see [The result page](#the-result-page)).
+
+### Advice for quiz authors
+
+- Give `pass` only to categories that represent something a certificate should guarantee.
+- A category with `pass` should have **at least 5 questions**. With 2 or 3 questions, one answer decides: 70% of 3 questions means all 3.
+- Small categories (or a short practice part) can be left without `pass`; they still count for the score.
 
 ---
 
 ## Scoring
 
-### Without penalty (`penalty: 0`)
+### Points per question
 
-| Answer | Points |
-|---|---|
-| Right | 1 |
-| Wrong | 0 |
-| Empty | 0 |
-
-**Score = (sum of points ÷ number of questions) × 100**, rounded to one decimal.
-
-Example: 20 questions, 17 right → 17 ÷ 20 × 100 = **85**.
-
-### With penalty (`penalty: 1`)
-
-| Answer | Points |
-|---|---|
-| Right | 1 |
-| Wrong | −1 ÷ (number of options − 1) |
-| Empty | 0 |
+| Answer | `penalty: 0` | `penalty: 1` |
+|---|---|---|
+| Right | 1 | 1 |
+| Wrong | 0 | −1 ÷ (options − 1) |
+| Empty | 0 | 0 |
 
 | Options | Penalty for one wrong answer |
 |---|---|
@@ -511,294 +492,226 @@ Example: 20 questions, 17 right → 17 ÷ 20 × 100 = **85**.
 | 4 | −0.333… |
 | 5 | −0.25 |
 
-**Score = (sum of points ÷ number of questions) × 100**, kept between 0 and 100, rounded to one decimal.
+### Score and mastery
 
-Example: 20 questions with 4 options; 15 right, 4 wrong, 1 empty.
-- Points = 15 − 4 × ⅓ = 13.667
-- Score = 13.667 ÷ 20 × 100 = **68.3**
-- The result card states the penalty: −6.7 points for 4 wrong answers (= 4 × ⅓ ÷ 20 × 100).
+**Score = points ÷ number of questions × 100**, kept between 0 and 100, rounded to one decimal.
 
-Random guessing gains nothing on average; unanswered questions are not punished.
+**Mastery of a category = points of its questions ÷ number of its questions × 100**, with the same rules.
 
-### Mastery per category
+A category reaches its pass mark when **mastery ≥ pass**, comparing the rounded mastery (79.96 is shown as 80 and passes `pass: 80`).
 
-**Mastery = (sum of points of the category's questions ÷ number of questions in the category) × 100**, with the same penalty rule, kept between 0 and 100, rounded to one decimal.
+Example (20 questions, 4 options, `penalty: 1`): 15 right, 4 wrong, 1 empty → 15 − 4/3 = 13.667 → **68.3**; the result card states a penalty of −6.7 points for 4 wrong answers.
 
-### Certificate requirement
+### Right answers needed
 
-All of these must be true:
+Without penalty, the requirement is shown as a number of right answers: the smallest number whose mastery reaches the pass mark. With 12 questions and `pass: 60`, 7 right gives 58.3%, so **8** are needed.
 
-1. the answers arrived in time (at most 60 seconds after the limit);
-2. **score ≥ pass**;
-3. with `minimum` and categories: **every category ≥ minimum**.
-
-### Hint: how many more right answers
-
-When the requirement is not met, the result card shows the **smallest number** of additional right answers needed, followed by what is missing:
-
-> Answer 3 more questions correctly to unlock your certificate. The pass mark is 80 points. Every part needs at least 60%. Below the minimum now: Phrases (50%).
-
-How it is calculated: first, each category below the minimum is raised with its own questions; then the pass mark is reached with the answers that gain the most. With penalty, changing a wrong answer to right gains more than answering an empty question, because the penalty disappears too.
-
-### Number format
-
-Scores, mastery and penalty points are shown with at most one decimal, with a dot (`68.3`, `85`).
+With penalty, wrong answers also lower the mastery, so the requirement is shown as a percentage; the result card then counts the fewest extra right answers needed, starting with the answers that gain the most (a wrong answer made right gains more than an empty one).
 
 ### Verification
 
-Scoring, mastery, penalty, the pass decision and the hint were checked on 1,000 random answer sets against an independently written reference calculation. All results were identical.
+Score, mastery, the certificate decision and every line of the hint were compared with an independently written reference calculation on 2,000 random answer sets: all results were identical.
 
 ---
 
-## The Start Popup
+## The start popup
 
-### What it shows
-
-Opening a quiz page shows only the popup. The questions are not in the page yet, and the time has not started. The page behind the popup cannot be scrolled. The popup is always in English.
+Opening a quiz page shows only the popup: the questions are not in the page yet, and the time has not started. The page behind it cannot be scrolled.
 
 | Row | Content |
 |---|---|
 | Title | The quiz title |
 | Questions | Number of questions |
-| Time | "20 minutes", "1 minute", or "No time limit" |
-| Opens | Opening date and time, e.g. "1 October 2026, 00:00" (only with `open`) |
-| Closes | Closing date and time (only with `close`) |
+| Time | "20 minutes", "1 minute" or "No time limit" |
+| Opens / Closes | Shown only with `open` / `close`, e.g. "1 October 2026, 00:00" |
 | Penalty | "None", or "Wrong answers lower the score (correction for guessing)" |
-| Parts | Names of the categories that have questions (only with categories) |
-| Certificate | "Score of at least 80", "Score of at least 80, and at least 60% in every part", or "Every attempt submitted in time" |
-| Instructions | The `!` lines of the quiz file |
+| Parts | Names of the categories (only with named categories) |
+| Certificate | One line per category (see below), or "No certificate for this quiz" |
+| Instructions | The `!` lines |
 | Rule | "Leaving this page for 10 seconds or more is counted. The third time, your answers are submitted automatically." |
-| Last score | "Your last score on this quiz: 85 (October 4, 2026)" — only when this browser took the quiz in the last 30 days. Followed by **View last result** while the full result is still stored (24 hours) |
+| Last score | "Your last score on this quiz: 85 (4 October 2026)" — if this browser took the quiz in the last 30 days — followed by **View last result** while the full result is stored (24 hours) |
 | Buttons | **Start quiz** and **Not now** |
-| Bottom | "Need an earlier certificate again? **Reprint it**", and **Remove my quiz data from this browser** when this browser has data of the quiz |
+| Bottom | "Need an earlier certificate again? **Reprint it**", and **Remove my quiz data from this browser** when this browser holds data of the quiz |
 
-### Buttons and links
+### The Certificate row
+
+| Category | Line |
+|---|---|
+| With `pass` (no penalty) | "Structure — Level 1: at least 7 of 10 right" |
+| With `pass` (penalty on) | "Grammar: at least 80%" |
+| With `pass: 0` | "Grammar: no minimum" |
+| Without `pass` | "Practice: not required" |
+| Quiz without requirements | "No certificate for this quiz" |
+
+### Buttons
 
 | Control | Action |
 |---|---|
-| **Start quiz** | Starts a new attempt and shows the questions. A layer "Preparing your quiz…" appears while the page loads. Pressing it twice starts only one attempt. If an attempt is already running, it continues |
-| **Not now** | Goes back to the previous page when the student came from another page of the same site; otherwise opens the home page |
-| **View last result** | Opens the stored result (`?result`) |
-| **Reprint it** | Replaces the popup content with the reprint form (section [Reprinting Certificates](#reprinting-certificates)). **← Back** returns to the quiz information |
-| **Remove my quiz data from this browser** | Section 14.6 |
+| **Start quiz** | Starts a new attempt and shows the questions, with a "Preparing your quiz…" layer. Pressing it twice starts one attempt; a running attempt continues |
+| **Not now** | Back to the previous page if it is on the same site; otherwise the home page |
+| **View last result** | Opens the stored result |
+| **Reprint it** | Shows the reprint form in the popup; **← Back** returns |
+| **Remove my quiz data from this browser** | See [The result page](#the-result-page) |
 
-### Before opening and after closing
+Before `open` the popup says "This quiz opens on …"; from `close` on it says "This quiz closed on … It can no longer be started."; neither has a Start button.
 
-| State | Popup |
-|---|---|
-| Before `open` | "This quiz opens on 10 October 2026, 08:00." — no Start button |
-| After `close` | "This quiz closed on 13 October 2026, 08:00. It can no longer be started." — no Start button |
-
-### Without JavaScript
-
-If JavaScript does not start, the message "Please enable JavaScript to take this quiz." appears after 1.5 seconds. The short delay avoids a flash of the message while JavaScript is loading. Questions and timer stay hidden until JavaScript is running.
+If JavaScript does not run, "Please enable JavaScript to take this quiz." appears after 1.5 seconds (at once with "reduce motion"); questions and timer stay hidden.
 
 ---
 
-## Taking the Quiz
+## Taking the quiz
 
-### The question page
+- Each question is a card with its number, text and options (A, B, C…), arranged in category blocks with their headings and texts.
+- Every answer is saved in the browser at once. A refresh, closing and reopening the tab, or a second tab continues the **same attempt** with the same order, answers and remaining time.
+- With the browser's Back button, a page restored from the cache is reloaded to show the correct state.
+- The send button says "Correction and score".
 
-- The opening section, the category headings, the category texts and the questions in their order.
-- Every question is a card with its number, the question and the options (with letters A, B, C…).
-- At the end: the send button with the text `QuizButton` ("Correction and score").
-
-### Answers are kept
-
-- Every chosen answer is saved in the browser immediately.
-- A refresh, closing and reopening the tab, or opening the quiz in a second tab **continues the same attempt**: same questions, same order, same answers, same remaining time.
-- With the browser's Back button, a page restored from the browser cache is reloaded so that it shows the correct state.
-
-### Timer (quizzes with a time limit only)
+### Timer (quizzes with a time limit)
 
 | Part | Description |
 |---|---|
-| Position | Fixed at the top centre of the screen; stays there while scrolling (layer 999) |
-| Content | Clock icon, "Time left", the remaining time as `minutes:seconds`, and "12/20 answered" |
-| Line | A thin line along the bottom shrinks with the remaining time |
-| Colours | Neutral white above half of the time. Below half it warms up gradually: amber until a quarter is left, then towards soft red until the end. The glow grows as the time gets thinner. No blinking |
-| Phone | The word "Time left" is hidden to save space |
+| Position | Fixed at the top centre of the screen (layer 999); stays while scrolling |
+| Content | Clock icon, "Time left", remaining `minutes:seconds`, and "12/20 answered" |
+| Line | A thin line at the bottom shrinks with the time |
+| Colours | Neutral above half the time; below half it warms up gradually to amber and then soft red, with a growing glow; no blinking |
+| Phones | The words "Time left" are hidden |
 
-A quiz without a time limit (`time: 0`) has **no timer and no answered counter**.
-
-### Time up
-
-- When the time is up, a message "Time is up. Your answers are being submitted…" appears and the answers are sent automatically.
-- If the quiz is opened again after its time ran out (within the attempt's lifetime), the answers are sent immediately.
+Without a time limit there is no timer and no answered counter. When time is up, "Time is up. Your answers are being submitted…" appears and the answers are sent; opening the quiz after its time ran out sends them at once.
 
 ### Unanswered questions
 
-- Pressing the send button with questions not answered shows a box: "Not all questions are answered", "3 questions are not answered yet:", and the numbers of those questions.
-- Up to **10 numbers** are shown; more are summarised as "and 5 more".
-- Tapping a number scrolls to that question. **Back to the questions**, tapping outside the box or pressing **Escape** scrolls to the first unanswered question.
-- Every unanswered question gets the badge **"Not answered yet"** until it is answered.
-- The box has **no button to send anyway**. Answers can only be sent when every question is answered, except for automatic sending ([Sending the Answers](#sending-the-answers)).
+- Sending with questions not answered shows a box: "Not all questions are answered", the count, and the numbers of those questions (up to 10, then "and N more").
+- Tapping a number goes to that question; **Back to the questions**, a click outside or **Escape** goes to the first one.
+- Each unanswered question shows "Not answered yet" until it is answered.
+- There is **no "send anyway"**.
 
 ---
 
-## Leaving the Page
+## Leaving the page
 
 | Event | Result |
 |---|---|
 | Away less than 10 seconds | Not counted |
-| Away 10 seconds or more | Counted once. On return, a message shows for 7 seconds: "You left the quiz page for 14 seconds (1 of 3). After the third time, your answers are submitted automatically." |
-| Third count | The answers are sent automatically ("Your answers were submitted automatically because you left the quiz page 3 times.") |
-
-What counts as leaving:
+| Away 10 seconds or more | Counted; on return a 7-second message: "You left the quiz page for 14 seconds (1 of 3). After the third time, your answers are submitted automatically." |
+| Third count | The answers are sent automatically |
 
 | Situation | Counted? |
 |---|---|
-| Switching to another tab or app, minimising the browser, locking a phone, the phone Home button | Yes |
-| Closing the tab and opening the quiz again | Yes: the time away is measured from the last moment the page was visible |
-| The browser freezing the page without any signal | Yes: a check every second detects the gap in time |
-| Clicking or playing media inside an iframe of the quiz (video, slides) | **No** |
+| Other tab or app, minimised browser, locked phone, phone Home button | Yes |
+| Closing the tab and opening the quiz again | Yes, measured from the last moment the page was visible |
+| The browser freezing the page silently | Yes (a check runs every second) |
+| Clicking or playing media inside a quiz iframe | **No** |
 | Leaving from inside such an iframe to another window | Yes |
-| The third count was reached but sending failed (for example no connection) | The answers are sent when the quiz is opened again |
+| Third count reached but sending failed | The answers are sent when the quiz is opened again |
 
-On phones, coming back is recognised when the page becomes visible again, because phones often do not report focus.
-
-The number of page leaves is stored with the result and shown on the result card.
+The number of page leaves is shown on the result card.
 
 ---
 
-## Sending the Answers
+## Sending the answers
 
-### Normal sending
+1. All questions answered → the button is pressed.
+2. The button is disabled and "Checking your answers…" appears.
+3. The browser opens the result page at `…/page/?result`.
 
-1. All questions answered → the send button is pressed.
-2. The button is disabled and a layer "Checking your answers…" appears.
-3. The browser opens the result page at the short address `…/page/?result`.
+Answers are sent automatically, **even incomplete**, when time is up, on the third page leave, or 30 minutes after closing for untimed quizzes (see [Schedule](#schedule)). Unanswered questions score 0, without penalty.
 
-### Automatic sending
-
-Answers are sent automatically, **even if not every question is answered**, when:
-
-| Reason | Section |
-|---|---|
-| The time is up | 11.4 |
-| The third page leave | 12 |
-| A quiz without a time limit reaches 30 minutes after its closing time | 15.4 |
-
-Questions not answered score 0, without penalty.
-
-### Invalid or expired attempts
-
-If answers arrive with an attempt that was changed, belongs to another quiz, or is older than its lifetime, nothing is graded and the page shows: "This attempt is not valid or has expired. Please retake the quiz."
+Answers with a changed, foreign or expired attempt are not graded: "This attempt is not valid or has expired. Please retake the quiz."
 
 ---
 
-## The Result Page
+## The result page
 
 ### Result card
 
 | Element | Example | When |
 |---|---|---|
 | Score box | **85** / 100 | Always |
-| Right answers | Right answers: **17 out of 20** | Always |
-| Score line | Score: **85 out of 100** | Always |
-| Mastery per category | Tricky Subjects **90%**, Phrases **50%** | With categories |
-| ✓ / ✕ after each category | ✓ at or above the minimum, ✕ below it | With categories and `minimum` |
-| Category note | "Mastery per part is the percentage of questions answered correctly in that part." + "Each part needs at least 60% for the certificate." | With categories (second sentence only with `minimum`) |
+| Right answers | Right answers: 17 out of 20 | Always |
+| Score line | Score: 85 out of 100 | Always |
+| Mastery per category | Grammar **90%** ✓, Practice **50%** | With named categories |
+| ✓ / ✕ | ✓ at or above the category's pass mark, ✕ below it | Only for categories with `pass` |
+| Category note | "Mastery per part is the percentage of questions answered correctly in that part." + "✓ and ✕ mark the parts that count for the certificate." | With categories (second sentence only with requirements) |
 | Mastery sentence | "Mastery: **85%**. This percentage shows how much of the material you have mastered." | Without categories |
 | Penalty note | "Penalty for wrong answers is on: -6.7 points for 4 wrong answers." | With `penalty: 1` |
-| Page leaves | "You left the quiz page 2 times for 10 seconds or more." | When the student left at least once |
-| Automatic sending | "Your answers were submitted automatically because you left the quiz page 3 times." | After the third page leave |
-| Certificate button | see 14.2 | |
+| Page leaves | "You left the quiz page 2 times for 10 seconds or more." / automatic-sending notice | When applicable |
+| Certificate button | see below | |
 | **Retake quiz** | Opens the start popup | Always |
-| Hint | "Answer 3 more questions correctly…" ([Scoring](#scoring)) | When the requirement is not met |
+| What is missing | see below | When a required category is below its pass mark |
 
-The maximum (100) is shown on the web page only. **The certificate shows the score without a maximum.**
+The maximum (100) appears on the web page only; the certificate shows the score without a maximum.
 
-Below the card: **Remove my quiz data from this browser**.
+### What the certificate still needs
+
+When a required category has not reached its pass mark, the card shows one line per such category:
+
+```
+Your certificate still needs:
+Structure — Level 1: 6 of 10 right — at least 7 needed
+```
+
+With `penalty: 1`:
+
+```
+Your certificate still needs:
+Grammar: 55.6% — at least 60% needed (1 more right answer)
+```
 
 ### Certificate button
 
 | State | Shown |
 |---|---|
-| Available | **Get your certificate**. The certificate box opens by itself after a moment |
+| Available | **Get your certificate**; the certificate box opens by itself after a moment |
 | Already created for this attempt | A disabled button: "Certificate issued to Rina Wulandari" |
-| More than 24 hours after sending | No button; "The time to create a certificate for this attempt has passed." |
-| Not passed, or late | No button |
+| More than 24 hours after sending | "The time to create a certificate for this attempt has passed." |
+| Not reached, late, or no requirements | No button |
 
-### Late answers
-
-Answers that arrived more than 60 seconds after the limit show the score and the message: "The time limit had already passed when the answers were submitted. No certificate is available for this attempt."
+Late answers show: "The time limit had already passed when the answers were submitted. No certificate is available for this attempt."
 
 ### Answer review
 
-Depends on `review` ([Quiz Settings (the `=` Line)](#quiz-settings-the--line)). The review starts with a note ("Here are your answers: correct ones are marked in green and wrong ones in red. The correct options are not shown." with `review: 0`, or "Here is the corrected quiz: right answers are highlighted in bold, wrong answers are struck through…" with `review: 1`), then shows the opening section, categories, texts, media and questions in the order of the attempt. A question that was not answered shows "Not answered".
+Follows `review` (see [Quiz settings](#quiz-settings)), with the opening section, category texts and media in the order of the attempt. An empty question shows "Not answered".
 
 ### Where the result is kept
 
-The result is kept **in the student's browser**, signed by the server. It is not stored on the server and not in the address.
+The result is kept **only in the student's browser**, signed by the server; not on the server and not in the address.
 
 | Event | Result |
 |---|---|
-| Refresh of the result page | The same result |
-| **View last result** in the popup | The full result, while stored |
-| Opening `…/page/?result` in another browser or on another device | **Only the start popup**. Questions, answers and key are not visible |
-| Sharing the result link | The receiver sees only the start popup |
-| 24 hours after sending | The full result is removed from the browser |
-| 30 days after sending | The last score in the popup is removed |
-| Browser data cleared, or a private window closed | The result is gone. A certificate already created stays on the server |
-
-The result page scrolls to the quiz when it opens.
+| Refresh | The same result |
+| **View last result** | The full result, while stored |
+| `…/page/?result` in another browser or device, or a shared link | **Only the start popup**; no questions, answers or key |
+| After 24 hours | The full result is removed |
+| After 30 days | The last score in the popup is removed |
+| Browser data cleared | The result is gone; a certificate already created stays on the server |
 
 ### Remove my quiz data from this browser
 
-On the result page and in the popup; **not** on the question page, so it cannot be used to reset the page-leave count.
+On the result page and in the popup (not on the question page). After a confirmation in the quiz's own box ("Remove your results for this quiz from this browser? If you have not created your certificate yet, you can no longer create it from this attempt.", buttons **Remove** and **Cancel**; Cancel has the focus; Escape or a click outside cancel), it removes the result, the last score and the remembered name. It keeps the device stamp and every certificate.
 
-| Removed | Not removed |
-|---|---|
-| The result of this quiz | The **device stamp** ([Certificates](#certificates)) |
-| The last score of this quiz | Certificates on the server |
-| The name remembered for certificates | |
-
-A confirmation appears first: "Remove your results for this quiz from this browser? If you have not created your certificate yet, you can no longer create it from this attempt." Useful on shared computers.
-
-### Retaking
-
-**Retake quiz** opens the start popup. **Start quiz** begins a new attempt with a new order and the full time. There is no limit on retakes.
+**Retake quiz** opens the popup; there is no limit on retakes.
 
 ---
 
-## Schedule (Open and Close)
-
-### States
+## Schedule
 
 | State | Students see |
 |---|---|
-| Before `open` | Popup "This quiz opens on …", no Start button |
-| Between `open` and `close` | Normal |
-| From `close` on | Popup "This quiz closed on … It can no longer be started.", no Start button |
+| Before `open` | "This quiz opens on 10 October 2026, 08:00.", no Start button |
+| Open | Normal |
+| From `close` on | "This quiz closed on 13 October 2026, 08:00. It can no longer be started.", no Start button |
 
-The schedule is checked by the server; changing the device clock does not open a quiz.
+The schedule is checked by the server.
 
-### Attempts started before closing
+**Attempts started before closing may be finished** until the student sends them, their own time runs out, or the third page leave. An attempt of a quiz **without a time limit** that started before closing ends **30 minutes after closing**; the answers are then sent automatically.
 
-An attempt started before the closing time **may be finished** until the student sends it, its own time runs out, or the third page leave. Example: a 50-minute quiz closes at 08:00; an attempt started at 07:55 may continue until 08:45.
-
-### Closing banner
-
-While answering a quiz that has a closing time, a calm banner appears under the timer (or at the top without a timer):
+A calm banner under the timer (or at the top without a timer) never blinks and never asks students to send:
 
 | When | Text |
 |---|---|
 | From 10 minutes before closing | "This quiz closes to new attempts at 08:00. You can continue this attempt until your own time runs out." |
 | After closing | "This quiz is now closed to new attempts. You can continue this attempt until your own time runs out." |
-
-The banner never blinks, never covers the questions and never asks students to send. Its text follows the page language.
-
-### No time limit and a closing time
-
-An attempt of a quiz **without a time limit** that started before closing ends **30 minutes after the closing time**, and the answers are then sent automatically. The banner states the end time:
-
-| When | Text |
-|---|---|
-| From 10 minutes before closing | "This quiz closes to new attempts at 08:00. You can continue this attempt until 08:30. At that time, your answers are sent automatically." |
-| After closing | "This quiz is now closed to new attempts. You can continue this attempt until 08:30. At that time, your answers are sent automatically." |
-
-Answers arriving more than 60 seconds after that end are late.
+| Untimed quiz | "…You can continue this attempt until 08:30. At that time, your answers are sent automatically." |
 
 ---
 
@@ -806,251 +719,144 @@ Answers arriving more than 60 seconds after that end are late.
 
 ### Requirements
 
-| Requirement | Detail |
-|---|---|
-| Passed | Section 9.4 |
-| In time | Not late |
-| Within 24 hours | The certificate must be created at most 24 hours after sending |
+The quiz has at least one category with `pass`; every such category reached its pass mark; the answers arrived in time; the certificate is created **within 24 hours** after sending.
 
 ### The certificate box
 
-The box opens by itself on the result page (or with **Get your certificate**). It shows the score, "Quiz completed" and the quiz title, and has a close button (×).
-
 | Step | Content |
 |---|---|
-| 1. Name | "Type your full name (not a nickname or initials) exactly as it should appear on the certificate." Field "Full name" (at most 60 characters), the warning that the certificate can be created only once for this attempt, **Close** and **Continue** |
-| 2. Confirm | "Create the certificate for this name?", the name in large letters, the warning, **Change name** and **Yes, create certificate** |
-| 3. Done | The result message and **Close**. The PDF downloads |
+| 1. Name | "Type your full name (not a nickname or initials) exactly as it should appear on the certificate.", a field (at most 60 characters), the warning that the certificate can be created only once for this attempt, **Close** and **Continue** |
+| 2. Confirm | The name in large letters, **Change name** and **Yes, create certificate** |
+| 3. Done | The message; the PDF downloads |
 
 | Server answer | Message |
 |---|---|
-| Created | "Certificate issued to Rina Wulandari" |
-| Same person already has an equal or higher score | "You already have a certificate for this quiz with a higher or equal score (92). That certificate has been downloaded." |
+| Created | "Certificate issued to …" |
+| Same person, equal or higher score already | "You already have a certificate for this quiz with a higher or equal score (92). That certificate has been downloaded." |
 | This attempt already has a certificate for another name | "The certificate for this attempt has already been issued to … Retake the quiz to get a new one." |
-| More than 24 hours after sending | "The time to create a certificate for this attempt has passed." |
-| Server cannot store data | "The certificate cannot be saved because the server cannot write data…" |
-| Any other problem | "The certificate could not be created. Check your connection and try again." |
+| After 24 hours | "The time to create a certificate for this attempt has passed." |
+| Data cannot be stored | "The certificate cannot be saved because the server cannot write data…" |
+| Other problem | "The certificate could not be created. Check your connection and try again." |
 
 ### Name rules
 
-- 1 to 60 characters. Letters of any language are allowed.
-- Repeated spaces become one space; control and invisible formatting characters are removed.
-- The name is remembered by this browser when **Yes, create certificate** is pressed, and filled in next time. It can be changed before confirming.
+1–60 characters, any letters; repeated spaces become one; control and invisible characters are removed. The name is remembered by the browser after **Yes, create certificate**.
 
 ### One attempt, one certificate; one person, the highest score
 
 | Situation | Result |
 |---|---|
-| Same attempt, same name again | The same certificate (same number) is downloaded again |
-| Same attempt, another name | Refused ([Certificates](#certificates)) |
-| Same person, same quiz, **lower or equal** score | The better certificate is kept and downloaded again |
-| Same person, same quiz, **higher** score | The old record is **replaced** by the new certificate. **The old certificate number is no longer valid** and cannot be reprinted |
+| Same attempt, same name | The same certificate again |
+| Same attempt, another name | Refused |
+| Same person, same quiz, lower or equal score | The better certificate is kept and downloaded |
+| Same person, same quiz, higher score | The old record is replaced; **the old number is no longer valid** |
 
-**Same person** means the same full name (capital letters and extra spaces ignored) **and** the same **device stamp**.
-
-The **device stamp** is a random code of 24 characters that the browser creates the first time a certificate is requested, and keeps in its storage. Students do not see or type it. The same name on another device, or after browser data was cleared, counts as another person: a separate record is created and nothing is lost.
-
-Simultaneous requests for the same attempt are processed one after another; only one certificate is recorded.
+"Same person" means the same full name (case and extra spaces ignored) and the same **device stamp**: 24 random characters the browser creates for the first certificate request and keeps. Another device counts as another person (a separate record). Simultaneous requests for one attempt are processed one by one.
 
 ### The PDF
 
-The PDF is drawn by the student's browser: an A4 landscape page (2339 × 1654 pixels image). File name: `certificate-<name>.pdf`, where the name has accents removed, other characters replaced by `-`, and lower case (e.g. `certificate-rina-wulandari.pdf`).
+A4 landscape, drawn by the browser, file `certificate-<name>.pdf` (accents removed, other characters `-`, lower case):
 
-| Part (top to bottom) | Content |
+| Part | Content |
 |---|---|
-| Frame | A double frame in a teal–violet gradient |
-| Site name | `Sitename`, in capital letters |
-| Heading | "Certificate of Completion" (`QuizCertHeading`) |
-| Opening | "This is to certify that" (`QuizCertIntro`) |
-| Name | The student's name |
-| Connector | "has successfully completed" (`QuizCertCompleted`) |
-| Quiz title | Up to two lines; longer titles end with "…" |
-| Mastery | "demonstrating 85% mastery of the material" (`QuizCertMastery`) |
-| Mastery per category | "Mastery by part: Tricky Subjects 90%, Phrases 80%." (`QuizCertParts`), up to three lines; only with categories |
-| Footer, left | Date of the certificate in the page language, label "Date" |
-| Footer, centre | The score in a medallion, label "Score". **No maximum** |
-| Footer, right | Certificate number, label "Certificate No.", with a round stamp: the site name in capitals around the edge (or "CERTIFIED" without a site name), a star in the middle and the year below |
+| Frame | Double teal–violet frame |
+| Site name | `Sitename` in capitals |
+| Heading | "Certificate of Completion" |
+| Body | "This is to certify that", the name, "has successfully completed", the quiz title (up to two lines), "demonstrating 85% mastery of the material", mastery per category (up to three lines, with categories) |
+| Footer | Date in English ("4 October 2026"), the score in a medallion (no maximum), the certificate number with a round stamp (site name around the edge, or CERTIFIED, a star and the year) |
 
 ### Certificate number
 
-- 10 characters: digits 0–9 and letters A–F, e.g. `7FE2CB6E32`.
-- Unique: a number already stored is never given again.
-- More than a trillion possible numbers.
-
-### Checking a certificate
-
-A PDF can be edited. To check one, look up its number in the record file (section [Certificate Records (CSV)](#certificate-records-csv)), or reprint it and compare name and score.
+10 characters, 0–9 and A–F (e.g. `7FE2CB6E32`), unique, over a trillion possible values.
 
 ---
 
-## Reprinting Certificates
+## Reprinting certificates
 
-Available in every quiz popup (**Reprint it**) and on a page with `[quizcertificate]`.
+In every quiz popup (**Reprint it**) and on a `[quizcertificate]` page:
 
-| Element | Content |
-|---|---|
-| Title | "Reprint a certificate" |
-| Text | "Enter the certificate number printed on your certificate." + "Certificates can be reprinted for 30 days after they were created." (with `QuizCertificateKeepDays: 0`: "Certificates can be reprinted at any time.") |
-| Field | "Certificate number", example "e.g. 7FE2CB6E32" |
-| Button | **Reprint PDF** |
+- type the number (spaces, dashes and lower case accepted) and press **Reprint PDF**;
+- a wrong format is refused before sending: "A certificate number has 10 characters (letters A–F and digits).";
+- found: the PDF downloads and "The certificate for … has been downloaded." appears;
+- not found (wrong, expired or replaced): "No certificate with this number was found. It may have been deleted because its storage period has ended."
 
-- Spaces, dashes and lower case are accepted (`7fe2-cb6e32`).
-- A number that is not 10 characters of 0–9 and A–F is refused before sending: "A certificate number has 10 characters (letters A–F and digits)."
-- Found: the same PDF downloads, and "The certificate for Rina Wulandari has been downloaded." appears.
-- Not found (wrong, expired, or replaced by a higher score): "No certificate with this number was found. It may have been deleted because its storage period has ended."
-- Works from any device.
+Reprinting works from any device while the record is kept. To check a certificate, compare its number with the records.
 
 ---
 
-## Certificate Records (CSV)
+## Certificate records
 
-### File
-
-One file per quiz in the data folder:
-
-```
-<quiz file name>-<6-character code>.csv
-```
-
-Example: `concord-quiz-3f9a1c.csv`. The file name part is made of lower-case letters, digits and `-` (at most 60 characters); the code comes from the quiz identity (section [Quiz Identity](#quiz-identity)).
-
-The file is created with the first certificate of the quiz. **Only students who create a certificate are recorded.** The first line holds the column names.
-
-### Columns
+One CSV file per quiz in the data folder: `<quiz file name>-<6-character code>.csv`. Only students who create a certificate are recorded. The first line holds the column names.
 
 | Column | Content | Example |
 |---|---|---|
-| `issued` | Date and time of creation (site time zone) | `2026-10-04 13:47:02` |
-| `certificate_no` | Certificate number | `7FE2CB6E32` |
+| `issued` | Date and time (site time zone) | `2026-10-04 13:47:02` |
+| `certificate_no` | Number | `7FE2CB6E32` |
 | `name` | Full name | `Rina Wulandari` |
-| `device` | 6-character code derived from the device stamp (not the stamp itself). Empty when the browser sent no stamp | `a91f3c` |
-| `minutes` | Time from Start to sending, measured by the server, one decimal | `18.5` |
-| `score` | Score 0–100 | `85` |
+| `device` | 6-character code derived from the device stamp; empty without a stamp | `a91f3c` |
+| `minutes` | Time from Start to sending (server) | `18.5` |
+| `score` | Score | `85` |
 | `percent` | Overall mastery (equal to the score) | `85` |
-| `quiz_title` | Quiz title | `Concord Quiz` |
-| `attempt` | Attempt code (one certificate per attempt) | `d41f…` |
-| `parts` | Mastery per category as `Name=value;Name=value` | `Tricky Subjects=90;Phrases=80` |
-| `identity` | Person code (name + device), used for the highest-score rule | `8c1e…` |
+| `quiz_title` | Title | `TEP Practice Test` |
+| `attempt` | Attempt code | 20 characters |
+| `parts` | Mastery per category, `Name=value;Name=value` | `Grammar=90;Reading=80` |
+| `identity` | Person code (name + device) | 16 characters |
 
-Values starting with `=`, `+`, `-`, `@`, a tab or a line break are stored with a leading `'`, so spreadsheet programs do not run them as formulas. The `'` is removed when the certificate is reprinted.
-
-### Safe writing
-
-- Writes are made one at a time, using `index.html` in the data folder as the lock.
-- A new record is appended; if writing fails (for example a full disk), the file is cut back to its previous size, so no broken line remains.
-- Replacing a record writes a temporary file first and then swaps it in, so readers never see a half-written file.
-- One record file may grow to **5 MB** (tens of thousands of certificates). When it is full, new certificates for that quiz cannot be stored.
-
-### Automatic removal
-
-- Records older than `QuizCertificateKeepDays` are no longer found immediately (reprint, leaderboard, highest-score rule).
-- They are removed from the files during a clean-up, which runs at most once per hour, when a quiz page or a `[quizcertificate]` page is opened.
-- Temporary files left by a failed write are removed after one hour.
-- No cron job is needed.
+- Values starting with `=`, `+`, `-`, `@`, a tab or a line break are stored with a leading `'`, so spreadsheets do not run them as formulas; the `'` is removed on reprint.
+- Writes are made one at a time (lock); appends are cut back if writing fails; replacements go through a temporary file.
+- **The quiz writes only to record files whose first line is exactly the current column list.** A file with other columns (for example saved again from a spreadsheet) is never written to: a new certificate for that quiz returns "the server cannot write data", and the automatic clean-up leaves the file untouched.
+- A file may grow to 5 MB.
+- Records older than `QuizCertificateKeepDays` are no longer found at once, and are removed during a clean-up that runs at most once per hour when a quiz or reprint page is opened. No cron job is needed.
 
 ### Spotting one device used for many names
 
-1. Open a **copy** of the CSV file in a spreadsheet.
-2. Sort by `device`. Rows from the same device come together.
-3. Select the `device` column and use *Conditional Formatting → Highlight Duplicate Values*.
-4. Look at `minutes` too: 50 questions in 2 minutes deserves a look.
-
-| name | device | score | minutes |
-|---|---|---|---|
-| Andi Pratama | **a91f3c** | 96 | 18 |
-| Budi Santoso | **a91f3c** | 94 | 3 |
-| Citra Lestari | **a91f3c** | 92 | 2 |
-| Dewi Anggraini | 5be20d | 88 | 22 |
-
-Several names on one device are a hint, not proof: lab computers and borrowed phones are common.
-
-**Never save an edited spreadsheet back into the data folder**; spreadsheet programs change dates, numbers and separators.
+Open a **copy** of the file in a spreadsheet, sort by `device`, highlight duplicate values, and look at `minutes`. Several names on one device are a hint (lab computers and borrowed phones are common), not proof. Never save an edited spreadsheet back into the data folder.
 
 ---
 
 ## Leaderboard
 
-```
-[quizleaderboard file.txt]
-[quizleaderboard file.txt 10]
-```
+`[quizleaderboard file.txt]` shows **No., Name, Score, Date** for one quiz file:
 
-| Column | Content |
-|---|---|
-| No. | Rank |
-| Name | Full name |
-| Score | Score |
-| Date | Date of the certificate (`YYYY-MM-DD`) |
+- each full name once with its best score (case and extra spaces ignored);
+- highest score first; equal scores by the earlier certificate;
+- all pages using that file combined; expired records not shown;
+- **never shown:** certificate numbers, device codes, attempt codes, person codes, time taken;
+- without certificates: "No certificates yet."
 
-- Each full name appears **once**, with its best score (capital letters and extra spaces ignored), even with certificates from several devices.
-- Ordered by score, highest first; equal scores are ordered by the earlier certificate.
-- Certificates of the same quiz file on different pages are combined.
-- Expired records are not shown.
-- **Never shown:** certificate numbers, device codes, attempt codes, person codes, time taken.
-- Without certificates: "No certificates yet."
-- Can be placed on any page; only the named quiz is shown.
-
-Names are visible to everyone who can open that page.
+Names are visible to everyone who can open the page.
 
 ---
 
-## Media, Diagrams and Charts
+## Media, diagrams and charts
 
-Media may be placed in the opening section, in a category introduction, between questions (it then travels with the next question) or at the end of a category ([Writing a Quiz File](#writing-a-quiz-file)). Media also appear in the answer review.
-
-### Accepted addresses
-
-Only addresses starting with `https://`, `http://`, or a single `/` (an address on this site) are used. Anything else, such as `javascript:` or `//other-site`, is dropped.
+Only addresses starting with `https://`, `http://` or a single `/` are used; anything else is dropped.
 
 ### Short form `![text](address)`
 
 | Address | Result |
 |---|---|
-| YouTube: `youtube.com/watch?v=ID`, `youtu.be/ID`, `youtube.com/embed/ID`, `youtube.com/shorts/ID`, `youtube.com/live/ID` | YouTube player from `youtube-nocookie.com` (privacy-enhanced), playing inside the page, without the full-screen button and without related videos from other channels |
-| Vimeo: `vimeo.com/123456`, `player.vimeo.com/video/123456` | Vimeo player |
-| Audio: `.mp3`, `.m4a`, `.aac`, `.ogg`, `.oga`, `.opus`, `.wav`, `.flac` | Audio player |
-| Video: `.mp4`, `.m4v`, `.webm`, `.ogv`, `.mov` | Video player |
-| Anything else | Image; the text becomes its description (`alt`); loaded when it comes near the screen |
+| YouTube (`watch?v=`, `youtu.be/`, `embed/`, `shorts/`, `live/`) | Privacy-enhanced YouTube player (`youtube-nocookie.com`), plays inside the page, no full-screen button, no related videos from other channels |
+| Vimeo (`vimeo.com/123`, `player.vimeo.com/video/123`) | Vimeo player |
+| `.mp3 .m4a .aac .ogg .oga .opus .wav .flac` | Audio player |
+| `.mp4 .m4v .webm .ogv .mov` | Video player |
+| Anything else | Image (the text becomes its description; loaded when near the screen) |
 
-```
-![Listen to the conversation](/media/quiz/audio/dialog-1.mp3)
-![Watch the lecture](https://youtu.be/AbCdEfGhIjK)
-![Tree diagram](/media/quiz/images/tree.png)
-```
+### Embed code
 
-### Pasted embed code
-
-A line starting with `<iframe`, `<audio` or `<video` is an embed. The code may continue over several lines until the closing tag (at most 40 more lines).
-
-```
-<iframe src="https://docs.google.com/presentation/d/e/…/embed" width="960" height="569"></iframe>
-<audio controls><source src="/media/quiz/audio/a.mp3" type="audio/mpeg"></audio>
-<video width="640" poster="/media/quiz/poster.jpg"><source src="/media/quiz/video/a.mp4" type="video/mp4"></video>
-```
-
-The code is **rebuilt**; only these parts are kept:
+Lines starting with `<iframe`, `<audio` or `<video` (up to 40 more lines until the closing tag). The code is **rebuilt**:
 
 | Tag | Kept |
 |---|---|
-| `<iframe>` | `src`, `width`, `height` (a number, optionally with `px` or `%`), `title` |
-| `<audio>` | `src`, and every `<source>` with `src` and `type` |
-| `<video>` | `src`, `width`, `height`, `poster`, and every `<source>` with `src` and `type` |
+| `<iframe>` | `src`, `width`, `height`, `title` |
+| `<audio>` | `src`, `<source src type>` |
+| `<video>` | `src`, `width`, `height`, `poster`, `<source src type>` |
 
-All other attributes and any script are removed. An embed without a usable address shows nothing.
+### Media behaviour
 
-### How media behave inside a quiz
+iframes load lazily in a sandbox (scripts, own site and forms allowed; no pop-ups, new tabs or page navigation; no full screen). Audio and video have controls, load only when played, and have no download, full screen, remote playback or picture-in-picture (closed at once if a phone enters them). Page full screen is closed at once so the timer stays visible. Using media inside a quiz iframe is not counted as leaving the page.
 
-| Media | Behaviour |
-|---|---|
-| iframe | Loaded when it comes near the screen. Runs in a sandbox that allows scripts, its own site and forms, but **not** new tabs, pop-ups or moving the quiz page. Full screen is not allowed. Autoplay and protected media are allowed. Without a title, it is announced as "Embedded content" |
-| YouTube | `fs=0`, `playsinline=1`, `rel=0` are added: no full-screen button, plays inside the page, no related videos from other channels |
-| Audio | Player with controls, loaded only when played, no download button |
-| Video | Player with controls, loaded only when played, plays inside the page on phones; no download, no full screen, no remote playback, no picture-in-picture. If a phone or browser still enters full screen or picture-in-picture, it is closed at once |
-| Page full screen | If anything puts the page into full screen, it is closed at once, so the timer stays visible |
-| Width | Never wider than the quiz, also on phones |
-| Page leaves | Clicking or playing media inside a quiz iframe is not counted as leaving the page |
-
-### Mermaid diagrams
+### Mermaid and Chart.js
 
 ````
 ```mermaid
@@ -1059,379 +865,317 @@ graph LR
 ```
 ````
 
-The diagram follows the normal Mermaid syntax. The library (`QuizMermaidUrl`) is loaded only by quizzes with a Mermaid block, and only when the page does not already have Mermaid.
-
-### Chart.js charts
-
 ````
 ```chartjs
-{
-  "type": "bar",
-  "data": {
-    "labels": ["Part 1", "Part 2"],
-    "datasets": [{ "label": "Questions", "data": [10, 10] }]
-  }
-}
+{ "type": "bar", "data": { "labels": ["Part 1", "Part 2"], "datasets": [{ "label": "Questions", "data": [10, 10] }] } }
 ```
 ````
 
-- The block may be called ` ```chartjs ` or ` ```chart `.
-- The content is a Chart.js configuration, written as **JSON** or as a **JavaScript object** (keys without quotes and single quotes are allowed).
-- The library (`QuizChartUrl`) is loaded only by quizzes with a chart block, and only when the page does not already have Chart.js.
-- The content runs as JavaScript in the browser; only trusted people should edit quiz files.
+` ```chart ` also works; the content is JSON or a JavaScript object and runs as JavaScript (only trusted people should edit quiz files). A quiz's own copy of Mermaid uses `securityLevel: "strict"`. Other ```` ``` ```` blocks are shown as code.
 
-### Code blocks
+### Width of diagrams and charts
 
-A ` ``` ` block with any other name, or no name, is shown as code, exactly as written.
+| Screen | Width |
+|---|---|
+| Up to 600 px | 97.5% of the screen |
+| Wider | 90% of the screen, at most 1400 px |
 
----
-
-## Stored Data and Privacy
-
-### On the server
-
-| Data | When | Kept |
-|---|---|---|
-| Secret key (`quiz-secret.php`) | Once, on first use | Until removed |
-| Certificate records (CSV) | When a certificate is created | `QuizCertificateKeepDays` |
-
-Answers, scores and attempts are **not** stored on the server. Students who do not create a certificate leave no record.
-
-### In the student's browser
-
-| Name | Type | Content | Kept |
-|---|---|---|---|
-| `yquiz_<quiz>` | Cookie (whole site) | Running attempt: random code and start time, signed | Time limit + 15 minutes, or 24 hours without a limit (at most 7 days). Removed when the answers are sent |
-| `yquizr_<quiz>` | Cookie (only the quiz page) | Result: start, sending time, answers, page leaves, reason of automatic sending, signed | 24 hours |
-| `yquiz:<quiz>` | Local storage | Answers in progress, page-leave count | Until the answers are sent |
-| `yquiz:seen:<quiz>` | Local storage | Last moment the page was seen (for page-leave detection) | Until the answers are sent |
-| `yquiz:last:<quiz>` | Local storage | Last score and date (no questions or answers) | 30 days |
-| `yquiz:name` | Local storage | Name for the next certificate | Until removed ([The Result Page](#the-result-page)) |
-| `yquiz:device` | Local storage | Device stamp (24 characters) | Until browser data is cleared |
-
-Cookies use `SameSite=Lax`, and `Secure` on HTTPS sites. `<quiz>` is the 12-character quiz code.
+The area is centred on the screen and is never narrower than the quiz. It is widened only when the theme's content column is centred (within 5% of its width, at least 24 px), so a sidebar is never covered, and it keeps the quiz width if a theme wrapper would cut it off. Diagrams keep their own size and are never drawn smaller than 60% of it (a long diagram then scrolls inside its block on a phone). Charts are 2:1 (3:2 on phones) and never taller than 75% of the screen (`maintainAspectRatio` is set to `false` unless the chart sets it). The layout is recomputed on resize, rotation and after drawing; before that, and without JavaScript, blocks keep the quiz width.
 
 ---
 
-## Security and Anti-Cheating
-
-### Protected
+## Security
 
 | Threat | Protection |
 |---|---|
-| Reading the answer key in the page | The key is never sent to the browser. Every option carries a random code bound to the quiz, the attempt, the question and the option; only the server knows which code is right |
-| Reading the questions before starting | Questions are sent only after Start |
-| Extending the time | The start time is signed by the server; the time is measured by the server |
-| Changing answers or score to get a certificate | The result is signed; any change makes it invalid |
-| Using a result of another quiz | Result signatures include the quiz |
-| Sharing the result link | The result exists only in the browser that took the quiz |
-| Several certificates from one attempt | One attempt, one certificate, one name, also for simultaneous requests |
-| Guessing certificate numbers | More than a trillion possibilities |
-| Taking a quiz outside its schedule | Checked by the server |
-| Copying questions | Blocked inside the popup, the question page and the result page: right click, text selection, copying, cutting, dragging, and Ctrl/Cmd + C, X, A, P, S, U. Text fields (name, certificate number) still work normally |
-| Printing | Ctrl/Cmd + P is blocked. Printing from the browser menu gives a white page with only the site name |
-| Looking up answers elsewhere | Page leaves are counted; the third sends the answers |
+| Reading the answer key | Never sent; every option carries a 16-character code signed with the quiz, attempt, question and option; only the server knows which is right |
+| Reading questions before starting | Questions are rendered only after Start |
+| Extending the time | Signed start time; time measured by the server |
+| Changing answers or score for a certificate | Signed result and certificate data; scores recomputed on the server |
+| Using another quiz's result | The quiz is part of every signature |
+| Sharing the result link | The result exists only in the taker's browser |
+| Certificates for several people from one attempt | One attempt, one certificate, one name |
+| Guessing certificate numbers | Over a trillion possible values |
+| Opening outside the schedule | Checked by the server |
+| Copying | Right click, selection, copy, cut, drag, and Ctrl/Cmd + C, X, A, P, S, U blocked in the popup, question page and result page; text fields still work |
+| Printing | Ctrl/Cmd + P blocked; printing from the menu gives a white page with the site name |
+| Other tabs | Page-leave detection |
 | Sending empty answers to see the key | Every question must be answered |
-| Opening the data folder from the web | `.htaccess` on Apache; nginx rule ([Installation](#installation)) |
-| Formulas in the record file | Leading `'` ([Certificate Records (CSV)](#certificate-records-csv)) |
-| Harmful code in quiz files | Text is escaped; embeds are rebuilt ([Media, Diagrams and Charts](#media-diagrams-and-charts)); only web addresses are accepted ([Media, Diagrams and Charts](#media-diagrams-and-charts)) |
-| Old copies of quiz pages | `Cache-Control: no-store, max-age=0` |
+| Opening the data folder | `.htaccess` / nginx rule |
+| Formulas in records | Leading `'` |
+| Harmful code in quiz files | Text escaped, embeds rebuilt, only web addresses, strict Mermaid |
+| Old copies of pages | `Cache-Control: no-store` |
 
-### Accepted limits
+Stamps are HMAC-SHA256 values made with the secret key and compared in constant time (`hash_equals`).
 
-This is a quiz for formative assessment, not a supervised exam. These cannot be prevented by any website and are accepted:
+Not preventable in a browser and accepted for a formative quiz: photos with another device, working together, guessing, finding the key over many retakes (slower with `review: card`), developer tools, and certificates created for friends (visible through `device` and `minutes`).
 
-| Limit | Note |
-|---|---|
-| Photographing questions with another device and asking an AI | Not preventable |
-| Working together in one room | Not preventable |
-| Guessing | Gives a low score and no certificate |
-| Finding the key over many retakes | With `review: 0`, right answers are marked green; with `review: card` only the score is shown, which needs very many retakes |
-| Creating certificates for friends | Visible through `device` and `minutes` in the record file ([Certificate Records (CSV)](#certificate-records-csv)) |
-| One person using several devices | Recorded more than once |
-| Developer tools (F12) | Cannot be fully blocked; the key is not in the page |
+---
 
-### A stricter quiz
+## Stored data and privacy
 
-```
-= time: 30, penalty: 1, shuffle: 1, review: card, pass: 80, minimum: 60, open: 2026-10-10 08:00, close: 2026-10-10 10:00
-```
+### Server
 
-Together with at least five options per question.
+| Data | When | Kept |
+|---|---|---|
+| `quiz-secret.php` | First use | Until removed |
+| Certificate records | When a certificate is created | `QuizCertificateKeepDays` |
+
+Answers, scores and attempts are **not** stored on the server.
+
+### Student's browser
+
+| Name | Type | Content | Kept |
+|---|---|---|---|
+| `yquiz_<quiz>` | Cookie (site) | Running attempt (random code and start time, signed) | Time limit + 15 minutes, or 24 hours without a limit (at most 7 days); removed on sending |
+| `yquizr_<quiz>` | Cookie (quiz page only) | Result (times, answers, page leaves, signed) | 24 hours |
+| `yquiz:<quiz>` | Local storage | Answers in progress, page-leave count | Until sending |
+| `yquiz:seen:<quiz>` | Local storage | Last moment the page was seen | Until sending |
+| `yquiz:last:<quiz>` | Local storage | Last score and local date | 30 days |
+| `yquiz:name` | Local storage | Name for the next certificate | Until removed |
+| `yquiz:device` | Local storage | Device stamp (24 characters) | Until browser data is cleared |
+
+Cookies use `SameSite=Lax`, and `Secure` on HTTPS. `<quiz>` is the 12-character quiz code.
 
 ---
 
 ## Appearance
 
-### Elements
-
 | Element | Appearance |
 |---|---|
-| Start popup | Plain white card over a dimmed, slightly blurred page; two-column list of facts separated by thin lines; dark **Start quiz** button and outlined **Not now** button. On phones it is a sheet that rises from the bottom |
-| Question cards | Rounded cards with a light teal–violet tint, number badge and option letters with a fixed indent |
-| Category heading | The quiz's own H2 style, replacing the theme's H2 style |
-| Timer | Light ribbon at the top ([Taking the Quiz](#taking-the-quiz)) |
+| Start popup | White card over a dimmed, slightly blurred page; two-column facts list; dark Start button, outlined Not now; a bottom sheet on phones |
+| Question cards | Rounded cards with a light teal–violet tint |
+| Category headings | The quiz's own H2 style |
+| Timer | Light ribbon at the top (layer 999) |
 | Closing banner | Calm amber notice under the timer |
-| Unanswered box and certificate box | Centred dialog cards |
-| Messages | Short messages ("Time is up…", page-leave warnings) appear near the top of the screen, below the timer, for 7 seconds |
-| Loading layer | "Preparing your quiz…" / "Checking your answers…" with a spinner |
+| Dialogs | Centred cards (layer 1000); confirmation box above the popup (layer 9500) |
+| Messages | Near the top, below the timer, for 7 seconds (layer 1001) |
+| Loading layer | "Preparing your quiz…" / "Checking your answers…" (layer 10000) |
 | Result card | Dark teal–indigo–violet card with the score box |
-| Leaderboard | Plain table-like list with a light header row |
+| Leaderboard | Plain list with a light header row |
 
-### Theme-safe styling
-
-- The popup, dialogs, result card, leaderboard and reprint form use only `div` and `span` with quiz class names, not elements themes usually style or script (`dl`/`dt`/`dd`, `ul`/`li`, `h3`, `details`/`summary`).
-- The popup, dialogs, result card, questions, options, timer, leaderboard and reprint form have protective base styles, so theme styles (accordions, list bullets, heading borders, capital-letter buttons) do not reach them.
-- Tested against a deliberately hostile theme: the quiz looked the same.
-- The site's font is kept, so the quiz fits the page.
-
-### Screens and preferences
-
-| Situation | Behaviour |
-|---|---|
-| Screen 600 px wide or less | Smaller spacing, full-width buttons, popup as a bottom sheet, smaller timer without the "Time left" label, smaller banner |
-| "Reduce motion" turned on in the operating system | No blur behind the popup, no animations or transitions |
-| Printing | White page with only the site name |
-
-### Layers
-
-| Layer | Element |
-|---|---|
-| 999 | Timer and closing banner |
-| 1000 | Unanswered box and certificate box |
-| 1001 | Short messages |
-| 9000 | Start popup |
-| 10000 | Loading layer |
-
-### Width
-
-The quiz is at most **46rem** wide and aligned to the left of the content area.
+The quiz is at most **46rem** wide. Its interface uses only `div`, `span`, `p`, `button`, `a`, `input` and `label` with quiz classes (no `dl`/`dt`/`dd`, `ul`/`li`, `h3`, `details`/`summary`) and has protective base styles, so theme styles do not reach it; the site font is kept. Screens of 600 px or less get a compact layout; "reduce motion" turns off blur and animations; printing gives a white page with the site name.
 
 ### CSS variables
 
-Colours and sizes can be changed in the theme's CSS (not in `quiz.css`, which is replaced on updates), for example:
+Change them in the theme's CSS (not in `quiz.css`, which is replaced on updates):
 
 ```css
-.quiz-container, .quiz-modal {
-    --quiz-blue: #0f5e59;
-    --quiz-radius: 10px;
-}
+.quiz-container, .quiz-modal { --quiz-blue: #0f5e59; --quiz-radius: 10px; }
 ```
 
 | Variable | Default | Used for |
 |---|---|---|
 | `--quiz-ink` | `#172033` | Main text |
-| `--quiz-blue` | `#3654d6` | Chosen option, answered number, buttons |
+| `--quiz-blue` | `#3654d6` | Chosen option, buttons |
 | `--quiz-blue-dark` | `#2a44b8` | Button hover |
-| `--quiz-blue-tint` | `#eef1fd` | Background of the chosen option, notes |
+| `--quiz-blue-tint` | `#eef1fd` | Chosen option background, notes |
 | `--quiz-accent` | `#ff8a3d` | Keyboard focus outline |
 | `--quiz-red` | `#d33a2c` | Wrong answers, errors |
-| `--quiz-red-tint` | `#fdf0ee` | Background of wrong answers and errors |
-| `--quiz-green` | `#15895a` | Right answers, success |
-| `--quiz-green-tint` | `#e9f7f0` | Background of right answers |
+| `--quiz-red-tint` | `#fdf0ee` | Wrong answer background |
+| `--quiz-green` | `#15895a` | Right answers |
+| `--quiz-green-tint` | `#e9f7f0` | Right answer background |
 | `--quiz-rule` | `#e3e7f0` | Borders of options and fields |
 | `--quiz-muted` | `#61697b` | Secondary text |
-| `--quiz-paper` | `#ffffff` | Background of options and dialogs |
-| `--quiz-bg` | `#f3f5fa` | Background of option letters |
-| `--quiz-teal` | `#0f9d94` | Accent colour (gradients) |
-| `--quiz-purple` | `#7b4bd6` | Accent colour (gradients) |
-| `--quiz-card-bg` | light teal–violet gradient on white | Background of question cards and the reprint card |
-| `--quiz-card-border` | `rgba(91, 108, 190, .2)` | Border of question cards |
+| `--quiz-paper` | `#ffffff` | Options and dialogs background |
+| `--quiz-bg` | `#f3f5fa` | Option letters background |
+| `--quiz-teal` | `#0f9d94` | Accent colour |
+| `--quiz-purple` | `#7b4bd6` | Accent colour |
+| `--quiz-card-bg` | light teal–violet gradient | Question cards, reprint card |
+| `--quiz-card-border` | `rgba(91, 108, 190, .2)` | Question card border |
 | `--quiz-summary-bg` | dark teal–indigo–violet gradient | Result card |
-| `--quiz-radius` | `14px` | Corner radius of cards |
+| `--quiz-radius` | `14px` | Card corners |
 | `--quiz-gap` | `1.75rem` (`1.35rem` on phones) | Space between cards |
-| `--quiz-shadow` | soft double shadow | Shadow of cards (`none` for flat cards) |
-
-The certificate PDF does not use these variables.
+| `--quiz-shadow` | soft double shadow | Card shadow (`none` for flat cards) |
 
 ---
 
-## Languages and Texts
+## Texts
 
-### Languages
+Every text is English, whatever the language of the site or page; every part of the quiz and everything quiz.js adds is marked `lang="en"`; dates are English ("4 October 2026"); the confirmation box is the quiz's own. The controls of the browser's built-in audio and video players follow the browser language.
 
-Texts on the question and result pages follow the Yellow page language. Missing texts fall back to English. **The start popup is always English**, including the reprint form inside it.
-
-| Language | Translated texts (of 107) |
-|---|---|
-| English | 107 |
-| Indonesian | 74 — the 26 popup texts stay English by design; 7 result and certificate texts are not translated (`QuizMastery`, `QuizCertMastery`, `QuizCertParts`, `QuizCertNeed`, `QuizCertNeedOne`, `QuizCertNeedPass`, `QuizCertNeedParts`) |
-| German, French, Italian, Spanish, Dutch, Portuguese | 6 basic texts |
-
-### Changing texts
-
-Any text can be changed in `system/extensions/yellow-language.ini`, under the language it belongs to:
+Texts can be changed in `system/extensions/yellow-language.ini` **under `Language: en`** (texts under other languages are ignored):
 
 ```ini
-Language: id
-QuizScore: Nilai: <b>@score dari @max_score</b>
-QuizRetake: Kerjakan lagi
-QuizMastery: Penguasaan materi: <b>@percent%</b>.
+Language: en
+QuizRetake: Try again
+QuizIntroPartFree: @name: practice only
 ```
 
-### Placeholders
+Words starting with `@` are replaced by the quiz:
 
-Words starting with `@` are replaced by the quiz. Keep them where the value should appear.
+| Placeholder | Replaced by |
+|---|---|
+| `@score` | Score |
+| `@max_score` | 100 |
+| `@right_answers`, `@curr_question` | Right answers, number of questions |
+| `@percent` | Mastery |
+| `@count` | A count (wrong answers, page leaves, questions, extra right answers) |
+| `@name` | A category name, or the name on a certificate |
+| `@right`, `@total`, `@needed` | Right answers in a category, its questions, right answers needed |
+| `@pass` | Pass mark of a category |
+| `@list` | Mastery of every category on the certificate ("Grammar 90%, Reading 80%") |
+| `@points` | Penalty points |
+| `@seconds` | Seconds away |
+| `@days` | Keep days |
+| `@minutes` | Time limit |
+| `@date` | A date |
+| `@time`, `@end` | Closing time, end time |
+| `@max` | Question limit |
 
-| Placeholder | Replaced by | In |
+All 111 texts are listed in the [appendix](#appendix-all-texts).
+
+---
+
+## How it works
+
+| File | Runs on | Job |
 |---|---|---|
-| `@score` | Score | `QuizScore`, `QuizIntroLast`, `QuizCertKept` |
-| `@max_score` | 100 | `QuizScore` |
-| `@right_answers` | Number of right answers | `QuizResult` |
-| `@curr_question` | Number of questions | `QuizResult` |
-| `@percent` | Mastery | `QuizMastery`, `QuizCertMastery` |
-| `@count` | A count | `QuizCertNeed`, `QuizPenaltyInfo`, `QuizAwayWarning`, `QuizAwayCount`, `QuizUnansweredMany`, `QuizUnansweredMore` |
-| `@min` | Pass mark | `QuizCertNeedPass` |
-| `@pass` | Pass mark | `QuizIntroPass`, `QuizIntroPassMinimum` |
-| `@minimum` | Minimum per category | `QuizCertNeedParts`, `QuizCategoryMinimum`, `QuizIntroPassMinimum` |
-| `@list` | List of categories | `QuizCertNeedParts`, `QuizCertParts` |
-| `@points` | Penalty points | `QuizPenaltyInfo` |
-| `@seconds` | Seconds away | `QuizAwayWarning` |
-| `@name` | Name on the certificate | `QuizCertIssued`, `QuizCertUsed`, `QuizReprintDone` |
-| `@days` | Keep days | `QuizReprintKeep` |
-| `@minutes` | Time limit | `QuizIntroMinutes` |
-| `@date` | A date | `QuizIntroLast`, `QuizIntroNotYetOpen`, `QuizIntroClosedNow` |
-| `@time` | Closing time | `QuizClosingSoon`, `QuizClosingSoonNoLimit` |
-| `@end` | End time | `QuizClosingSoonNoLimit`, `QuizClosedRunningNoLimit` |
-| `@max` | Question limit | `QuizTooLong` |
+| `quiz.php` | Server | Reads quiz files, keeps the key, measures time, grades, signs and checks stamps, decides certificates, stores and finds records |
+| `quiz.js` | Browser | Popup, saving answers, page leaves, timer, banners, required answers, result storage, diagrams and charts, certificate PDF |
+| `quiz.css` | Browser | Layout, theme protection, states set by quiz.js, print page |
 
-### Dates
+The server decides; the browser displays. No attempt is stored on the server: the attempt and the result live in the browser, protected by signatures, and every value coming back is checked again.
 
-| Where | Format |
-|---|---|
-| Popup (opens, closes) | "10 October 2026, 08:00" |
-| Popup (last score) | English, e.g. "October 4, 2026" |
-| Certificate | Long date in the page language |
-| Closing banner | `HH:MM` |
-| Record file and leaderboard | `YYYY-MM-DD` (record file with time) |
+```mermaid
+stateDiagram-v2
+    [*] --> Popup: open the quiz page
+    Popup --> Answering: Start quiz (quiz open)
+    Answering --> Answering: refresh, second tab, reopen
+    Answering --> Sent: send (all answered)
+    Answering --> Sent: time up / third page leave / untimed end
+    Sent --> Result: redirect to ?result + result cookie
+    Result --> Certificate: Get your certificate (requirements met, in time, within 24 h)
+    Result --> Popup: Retake quiz / Remove my quiz data
+    Certificate --> Result
+```
 
-The full list of texts is in section [Appendix: All Texts](#appendix-all-texts).
+| Step | quiz.php | quiz.js | quiz.css |
+|---|---|---|---|
+| Open | Popup without questions | Last score, buttons | Popup card, scroll lock |
+| Start | Checks the schedule, creates and signs the attempt, renders questions | Restores answers, starts the timer | Cards, timer |
+| Answer | — | Saves answers, counts leaves, banners | States and badges |
+| Send | Checks the attempt, signs the result, sets cookies, redirects | Required answers, hidden fields | Dialog, loading layer |
+| Result | Checks the result, grades, checks the requirements, signs certificate data | Last score, remove data, certificate box | Result card, review |
+| Certificate | Checks the signature, 24 hours, name, records; writes the record | Requests, draws and downloads the PDF | Certificate box |
 
 ---
 
-## Limits and Fixed Values
-
-| Item | Value |
-|---|---|
-| Questions per quiz | 300 |
-| Longest time limit | 10,080 minutes (7 days) |
-| Late tolerance | 60 seconds |
-| Attempt lifetime | Time limit + 15 minutes; 24 hours without a limit; at most 7 days |
-| Certificate window | 24 hours after sending |
-| Full result in the browser | 24 hours |
-| Last score in the popup | 30 days |
-| Page leave counted | 10 seconds or more |
-| Page leaves before automatic sending | 3 |
-| Page-leave check | Every second |
-| Message duration | 7 seconds |
-| JavaScript notice delay | 1.5 seconds |
-| Closing banner | From 10 minutes before closing |
-| Extra time after closing (no time limit) | 30 minutes |
-| Numbers in the unanswered box | 10, then "and N more" |
-| Name on the certificate | 1–60 characters |
-| Certificate number | 10 characters (0–9, A–F) |
-| Device stamp | 24 characters; device code in the record file 6 characters |
-| Record file | 5 MB |
-| Clean-up | At most once per hour |
-| Embed code | Up to 40 more lines after the first |
-| Quiz width | 46rem |
-| Phone layout | 600 px or less |
-
----
-
-## Technical Reference
-
-### Yellow hooks
-
-| Hook | Work |
-|---|---|
-| `onLoad` | Registers the settings and texts |
-| `onRequest` | Handles, before the page is built: certificate requests and reprint requests (JSON answers), and sent answers (redirect to `?result`) |
-| `onParseContentElement` | Renders `[quiz]`, `[quizcertificate]` and `[quizleaderboard]`; runs the clean-up; handles requests itself when `onRequest` is not called |
-| `onParsePageExtra` | Adds `quiz.js` and `quiz.css` to the page header |
+## Technical reference
 
 ### Requests
 
 | Request | Method | Fields | Answer |
 |---|---|---|---|
-| Start a quiz | GET | `quiz_start=1` | Question page (a new attempt if none is running and the quiz is open) |
-| Retake | GET | `quiz_retake=<quiz>` | Start popup |
-| Result | GET | `result` | Result page, if this browser holds a valid result; otherwise the start popup |
-| Send answers | POST | `quiz_id`, `quiz_attempt`, `quiz_client=1`, `quiz_away` (page leaves), `quiz_auto` (`time`, `away` or empty), `quest[<question>]` (option code) | `303` redirect to `?result`, setting the result cookie and removing the attempt cookie |
+| Start | GET | `quiz_start=1` | Question page |
+| Retake | GET | `quiz_retake=<quiz>` | Popup |
+| Result | GET | `result` | Result page if this browser holds a valid result, otherwise the popup |
+| Send answers | POST | `quiz_id`, `quiz_attempt`, `quiz_client=1`, `quiz_away`, `quiz_auto` (`time`, `away` or empty), `quest[<n>]` | `303` to `?result` with the result cookie |
 | Create a certificate | POST | `quiz_cert=1`, `cert_payload`, `cert_sig`, `cert_name`, `cert_device` | JSON |
 | Reprint | POST | `quiz_reprint=1`, `number` | JSON |
 
-`quiz_start` and `quiz_retake` are removed from the address bar by `quiz.js`. Answers sent without `quiz_client=1` (no JavaScript) are not graded.
-
-### JSON answers
-
-Successful certificate and reprint answers:
+### JSON
 
 ```json
-{"ok":true,"name":"Rina Wulandari","code":"7FE2CB6E32","date":"2026-10-04","title":"Concord Quiz",
- "site":"Site Name","score":85,"pct":85,"parts":[["Tricky Subjects",90],["Phrases",80]]}
+{"ok":true,"name":"Rina Wulandari","code":"7FE2CB6E32","date":"2026-10-04","title":"TEP Practice Test",
+ "site":"Site Name","score":85,"pct":85,"parts":[["Structure — Level 1",90],["Reading — Passage 1",80]]}
 ```
 
-A certificate answer may also contain `"kept":true` (an equal or higher certificate was kept).
+A certificate answer may contain `"kept":true`.
 
 | `error` | Meaning |
 |---|---|
-| `invalid` | Signature wrong, data incomplete, or the certificate number has a wrong format |
+| `invalid` | Signature wrong, data incomplete, or number format wrong |
 | `expired` | More than 24 hours after sending |
 | `name` | Name empty or longer than 60 characters |
-| `used` | This attempt already has a certificate for another name (`issuedTo` holds that name) |
-| `not_found` | No certificate with this number (wrong, expired or replaced) |
-| `storage` | The data folder cannot be written, or the record file is full |
+| `used` | The attempt already has a certificate for another name (`issuedTo`) |
+| `not_found` | No certificate with this number |
+| `storage` | The data folder cannot be written, the record file is full, or it has other columns |
 
-JSON answers are sent with `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
+JSON answers use `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 
-### Signed values (HMAC-SHA256 with the secret key)
+### Stamps
 
-| Value | Form |
-|---|---|
-| Quiz code | 12 characters from the page address and the file name |
-| Attempt | `seed.start.signature` — 16 random hexadecimal characters, start time, 16-character signature |
-| Option code | 16 characters, bound to quiz, attempt, question and option |
-| Result | `seed.start.sent.leaves.reason.answers.signature`, the signature covering the quiz; answers are 8 characters per question (`--------` when empty) |
-| Attempt code (CSV `attempt`) | 20 characters |
-| Certificate data | JSON with quiz, record file, attempt code, title, score, mastery, categories, sending time and minutes, plus a signature |
-| Certificate number | 10 characters, uppercase |
-| Person code (CSV `identity`) | 16 characters from the name and device stamp |
-| Device code (CSV `device`) | 6 characters from the device stamp |
+| Stamp | Signed text | Length |
+|---|---|---|
+| Attempt | `attempt\|quiz\|seed\|start` | 16 |
+| Option code | `answer\|quiz\|seed\|question\|option` | 16 (8 stored in the result) |
+| Result | `result\|quiz\|seed.start.sent.leaves.reason.answers` | 32 |
+| Certificate data | `cert\|` + JSON | 64 |
+| Attempt code | `nonce\|quiz\|seed\|start` | 20 |
+| Certificate number | `code\|attempt code\|name` | 10 |
+| Person code | `identity\|name\|device` | 16 |
+| Device code | `device\|device stamp` | 6 |
 
 ### Data attributes
 
 | Element | Attributes |
 |---|---|
 | Question page | `data-quiz-id`, `data-attempt`, `data-time`, `data-remaining`, `data-lifetime`, `data-close-in`, `data-close-at`, `data-deadline-in`, `data-end-at`, `data-mermaid-url`, `data-chart-url`, `data-i18n` |
-| Result page | `data-quiz-id`, `data-result`, `data-result-token` (only when `onRequest` is not called), `data-mermaid-url`, `data-chart-url`, `data-i18n` |
+| Result page | `data-quiz-id`, `data-result`, `data-result-token` (only without onRequest), `data-mermaid-url`, `data-chart-url`, `data-i18n` |
 | Popup, reprint form, leaderboard | `data-quiz-id` (popup), `data-i18n` |
 | Chart | `data-config` |
 
-### Accessibility
+### Yellow hooks
 
-Questions are radio groups labelled by their text; the timer has the role `timer`; dialogs are modal dialogs with headings; messages use `status` and `alert`; the loading layer uses `status`; buttons are reachable by keyboard and the focus outline is visible.
+| Hook | Work |
+|---|---|
+| `onLoad` | Registers settings and texts |
+| `onRequest` | Certificate and reprint requests (JSON); sent answers (redirect) |
+| `onParseContentElement` | Renders the three shortcuts, runs the clean-up, handles requests itself when onRequest is not called |
+| `onParsePageExtra` | Adds quiz.js and quiz.css to the page header |
+
+---
+
+## Limits
+
+| Item | Value |
+|---|---|
+| Questions per quiz | 300 |
+| Time limit | Up to 10,080 minutes |
+| Late tolerance | 60 seconds |
+| Attempt lifetime | Time limit + 15 minutes; 24 hours without a limit; at most 7 days |
+| Certificate window | 24 hours after sending |
+| Result in the browser | 24 hours |
+| Last score in the popup | 30 days |
+| Page leave counted | 10 seconds or more |
+| Page leaves before sending | 3 |
+| Closing banner | From 10 minutes before closing |
+| Extra time after closing (untimed) | 30 minutes |
+| Numbers in the unanswered box | 10, then "and N more" |
+| Name | 1–60 characters |
+| Certificate number | 10 characters (0–9, A–F) |
+| Device stamp / device code | 24 / 6 characters |
+| Record file | 5 MB |
+| Clean-up | At most once per hour |
+| Embed code | Up to 40 more lines |
+| Quiz width | 46rem |
+| Diagram and chart area | 90% of the screen (max. 1400 px); 97.5% up to 600 px |
+| Chart height | At most 75% of the screen |
+| Smallest diagram size | 60% of its own size |
+| Category `pass` | 0–100, one decimal |
 
 ---
 
 ## Troubleshooting
 
-| Problem | Cause and solution |
+| Problem | Solution |
 |---|---|
-| The shortcut shows nothing | Wrong file name, file not in `QuizDirectory`, name with characters that are not allowed, or no valid question (a question starts with `1.`, `-`, `+` or `*` and a space, and contains `\|`) |
-| "This quiz cannot be used yet: the secret key could not be created…" | PHP cannot write to `system/workers/`. Allow it, or set `QuizSecret` (16+ characters) |
-| "The certificate cannot be saved because the server cannot write data…" | The data folder is not writable, the disk is full, or the record file of the quiz reached 5 MB |
-| "This quiz has more than 300 questions…" | Split the quiz |
-| "Please enable JavaScript to take this quiz." | JavaScript is off in the browser |
-| "This attempt is not valid or has expired…" | The attempt was changed, belongs to another quiz, or is older than its lifetime; retake the quiz |
-| Schedule is off by some hours | Set `CoreTimezone` |
+| The shortcut shows nothing | Check the file name and folder; questions start with `1.`, `-`, `+` or `*` and a space and contain `\|` |
+| The popup says "No certificate for this quiz" | Add `\| pass: …` to at least one `@` line |
+| A category does not count for the certificate | Check the spelling: `@ Name \| pass: 80` (0–100) |
+| "The secret key could not be created" | Let PHP write to `system/workers/`, or set `QuizSecret` |
+| "The server cannot write data" | Make the data folder writable; check disk space, the 5 MB limit, and that the record file was not saved again from a spreadsheet (its first line must be the original column list) |
+| "This quiz has more than 300 questions" | Split the quiz |
+| "Please enable JavaScript" | JavaScript is off |
+| "This attempt is not valid or has expired" | Retake the quiz |
+| Schedule off by hours | Set `CoreTimezone` |
 | Reopen a closed quiz | Change or remove `close` |
-| A result cannot be opened on another device | By design ([The Result Page](#the-result-page)); certificates can be reprinted by number |
-| "View last result" is missing | The result is older than 24 hours, was removed, or browser data was cleared |
-| A certificate number is not found | The record expired, or it was replaced by a higher-score certificate |
-| The quiz became "new" after moving the page | Section 6 |
+| Result missing on another device | By design; reprint certificates by number |
+| "View last result" missing | Older than 24 hours, removed, or browser data cleared |
+| Certificate number not found | Expired, or replaced by a higher score |
+| The quiz became "new" after moving the page | See [Quiz identity](#quiz-identity) |
 | A diagram or chart is missing | Block syntax, or the library address cannot be loaded |
-| The quiz looks wrong with a certain theme | Send a screenshot for checking |
 
 ---
 
@@ -1441,116 +1185,120 @@ Based on the quiz extension 0.9.1 for Datenstrom Yellow. Keep the license of the
 
 ---
 
-## Appendix: All Texts
+## Appendix: all texts
 
-Generated from `quiz.php`. Texts marked *popup* are used in the start popup, which is always English. "—" means no Indonesian translation (English is used).
+Generated from `quiz.php`. Texts marked *popup* are used in the start popup.
 
-| Key | Default (English) | Default (Indonesian) |
-|---|---|---|
-| `QuizCorrected` | Here is the corrected quiz: right answers are highlighted in <b>bold</b>, wrong answers in <del class=\ | Berikut hasil koreksi kuis: jawaban benar ditandai <b>tebal</b>, jawaban salah ditandai <del class=\ |
-| `QuizButton` | Correction and score | Koreksi dan skor |
-| `QuizResult` | Right answers: <b>@right_answers out of @curr_question</b> | Jawaban benar: <b>@right_answers dari @curr_question</b> |
-| `QuizScore` | Score: <b>@score out of @max_score</b> | Skor: <b>@score dari @max_score</b> |
-| `QuizTrue` | True | Benar |
-| `QuizFalse` | False | Salah |
-| `QuizCertButton` | Get your certificate | Unduh sertifikat |
-| `QuizModalTitle` | Quiz completed | Kuis selesai |
-| `QuizNamePrompt` | Type your full name (not a nickname or initials) exactly as it should appear on the certificate. | Tuliskan nama lengkap Anda (bukan nama panggilan atau singkatan) persis seperti yang ingin dicetak pada sertifikat. |
-| `QuizNamePlaceholder` | Full name | Nama lengkap |
-| `QuizClose` | Close | Tutup |
-| `QuizCertHeading` | Certificate of Completion | Sertifikat Penyelesaian |
-| `QuizCertIntro` | This is to certify that | Dengan ini menyatakan bahwa |
-| `QuizCertCompleted` | has successfully completed | telah berhasil menyelesaikan |
-| `QuizCertScore` | Score | Skor |
-| `QuizCertDate` | Date | Tanggal |
-| `QuizCertNumber` | Certificate No. | No. Sertifikat |
-| `QuizTimeUp` | Time is up. Your answers are being submitted… | Waktu habis. Jawaban Anda sedang dikirim… |
-| `QuizCertContinue` | Continue | Lanjut |
-| `QuizCertWarning` | The certificate can be created only once for this attempt, and the name cannot be changed afterwards. | Sertifikat hanya bisa dibuat satu kali untuk percobaan ini, dan nama tidak bisa diubah sesudahnya. |
-| `QuizCertConfirm` | Create the certificate for this name? | Buat sertifikat atas nama ini? |
-| `QuizCertConfirmYes` | Yes, create certificate | Ya, buat sertifikat |
-| `QuizCertEdit` | Change name | Ubah nama |
-| `QuizCertIssued` | Certificate issued to @name | Sertifikat sudah dibuat atas nama @name |
-| `QuizCertUsed` | The certificate for this attempt has already been issued to @name. Retake the quiz to get a new one. | Sertifikat untuk percobaan ini sudah dibuat atas nama @name. Ikuti ulang kuis untuk mendapatkan sertifikat baru. |
-| `QuizCertError` | The certificate could not be created. Check your connection and try again. | Sertifikat gagal dibuat. Periksa koneksi lalu coba lagi. |
-| `QuizRetake` | Retake quiz | Ikuti ulang kuis |
-| `QuizNotAnswered` | Not answered | Tidak dijawab |
-| `QuizCorrectedMarks` | Here are your answers: correct ones are marked in green and wrong ones in red. The correct options are not shown. | Berikut jawaban Anda: jawaban benar ditandai hijau dan jawaban salah ditandai merah. Opsi yang benar tidak ditampilkan. |
-| `QuizStorageError` | The certificate cannot be saved because the server cannot write data. Please contact the site administrator. | Sertifikat belum dapat disimpan karena server tidak dapat menulis data. Silakan hubungi admin situs. |
-| `QuizMastery` | Mastery: <b>@percent%</b>. This percentage shows how much of the material you have mastered. | — |
-| `QuizCertMastery` | demonstrating @percent% mastery of the material | — |
-| `QuizTooLong` | This quiz has more than @max questions. Please split it into smaller quizzes. | Kuis ini berisi lebih dari @max soal. Silakan bagi menjadi beberapa kuis yang lebih kecil. |
-| `QuizCertNeed` | Answer @count more questions correctly to unlock your certificate. | — |
-| `QuizCertNeedOne` | Answer 1 more question correctly to unlock your certificate. | — |
-| `QuizCertNeedPass` | The pass mark is @min points. | — |
-| `QuizCertNeedParts` | Every part needs at least @minimum%. Below the minimum now: @list. | — |
-| `QuizCertParts` | Mastery by part: @list. | — |
-| `QuizCategoryNote` | Mastery per part is the percentage of questions answered correctly in that part. | Penguasaan per bagian adalah persentase soal yang dijawab benar di bagian itu. |
-| `QuizCategoryMinimum` | Each part needs at least @minimum% for the certificate. | Setiap bagian harus mencapai minimal @minimum% untuk sertifikat. |
-| `QuizPenaltyInfo` | Penalty for wrong answers is on: -@points points for @count wrong answers. | Penalti jawaban salah aktif: -@points poin untuk @count jawaban salah. |
-| `QuizAwayWarning` | You left the quiz page for @seconds seconds (@count of 3). After the third time, your answers are submitted automatically. | Anda meninggalkan halaman kuis selama @seconds detik (@count dari 3). Pada kali ketiga, jawaban dikirim otomatis. |
-| `QuizAwaySubmitted` | Your answers were submitted automatically because you left the quiz page 3 times. | Jawaban dikirim otomatis karena Anda meninggalkan halaman kuis 3 kali. |
-| `QuizAwayCount` | You left the quiz page @count times for 10 seconds or more. | Anda meninggalkan halaman kuis @count kali selama 10 detik atau lebih. |
-| `QuizJsRequired` | Please enable JavaScript to take this quiz. | Aktifkan JavaScript untuk mengerjakan kuis ini. |
-| `QuizUnansweredTitle` | Not all questions are answered | Belum semua soal dijawab |
-| `QuizUnansweredOne` | 1 question is not answered yet: | 1 soal belum dijawab: |
-| `QuizUnansweredMany` | @count questions are not answered yet: | @count soal belum dijawab: |
-| `QuizUnansweredMore` | and @count more | dan @count soal lainnya |
-| `QuizUnansweredHint` | Answer every question before you submit. Tap a number to go to that question. | Jawab semua soal sebelum mengirim. Ketuk nomor untuk menuju soal itu. |
-| `QuizUnansweredBack` | Back to the questions | Kembali ke soal |
-| `QuizUnansweredBadge` | Not answered yet | Belum dijawab |
-| `QuizSubmitting` | Checking your answers… | Menilai jawaban… |
-| `QuizIntroQuestionsLabel` *(popup)* | Questions | — |
-| `QuizIntroTimeLabel` *(popup)* | Time | — |
-| `QuizIntroPenaltyLabel` *(popup)* | Penalty | — |
-| `QuizIntroPartsLabel` *(popup)* | Parts | — |
-| `QuizIntroCertificateLabel` *(popup)* | Certificate | — |
-| `QuizIntroPenaltyOff` *(popup)* | None | — |
-| `QuizIntroPenaltyOn` *(popup)* | Wrong answers lower the score (correction for guessing) | — |
-| `QuizIntroPass` *(popup)* | Score of at least @pass | — |
-| `QuizIntroPassMinimum` *(popup)* | Score of at least @pass, and at least @minimum% in every part | — |
-| `QuizIntroPassNone` *(popup)* | Every attempt submitted in time | — |
-| `QuizIntroReprintAsk` *(popup)* | Need an earlier certificate again? | — |
-| `QuizIntroReprintOpen` *(popup)* | Reprint it | — |
-| `QuizIntroBack` *(popup)* | Back | — |
-| `QuizIntroMinutes` *(popup)* | @minutes minutes | — |
-| `QuizIntroOneMinute` *(popup)* | 1 minute | — |
-| `QuizIntroNoTime` *(popup)* | No time limit | — |
-| `QuizIntroLeave` *(popup)* | Leaving this page for 10 seconds or more is counted. The third time, your answers are submitted automatically. | — |
-| `QuizIntroStart` *(popup)* | Start quiz | — |
-| `QuizIntroNotNow` *(popup)* | Not now | — |
-| `QuizIntroLast` *(popup)* | Your last score on this quiz: @score (@date) | — |
-| `QuizIntroViewLast` *(popup)* | View last result | — |
-| `QuizPreparing` *(popup)* | Preparing your quiz… | — |
-| `QuizCertKept` | You already have a certificate for this quiz with a higher or equal score (@score). That certificate has been downloaded. | Anda sudah memiliki sertifikat kuis ini dengan skor yang lebih tinggi atau sama (@score). Sertifikat itu yang diunduh. |
-| `QuizClosingSoon` | This quiz closes to new attempts at @time. You can continue this attempt until your own time runs out. | Kuis ini ditutup untuk pengerjaan baru pada pukul @time. Anda tetap bisa melanjutkan pengerjaan ini sampai waktu Anda sendiri habis. |
-| `QuizClosedRunning` | This quiz is now closed to new attempts. You can continue this attempt until your own time runs out. | Kuis ini sudah ditutup untuk pengerjaan baru. Anda tetap bisa melanjutkan pengerjaan ini sampai waktu Anda sendiri habis. |
-| `QuizClosingSoonNoLimit` | This quiz closes to new attempts at @time. You can continue this attempt until @end. At that time, your answers are sent automatically. | Kuis ini ditutup untuk pengerjaan baru pada pukul @time. Anda tetap bisa melanjutkan pengerjaan ini sampai pukul @end. Pada saat itu, jawaban Anda dikirim otomatis. |
-| `QuizClosedRunningNoLimit` | This quiz is now closed to new attempts. You can continue this attempt until @end. At that time, your answers are sent automatically. | Kuis ini sudah ditutup untuk pengerjaan baru. Anda tetap bisa melanjutkan pengerjaan ini sampai pukul @end. Pada saat itu, jawaban Anda dikirim otomatis. |
-| `QuizForget` | Remove my quiz data from this browser | Hapus data kuis saya dari browser ini |
-| `QuizForgetConfirm` | Remove your results for this quiz from this browser? If you have not created your certificate yet, you can no longer create it from this attempt. | Hapus hasil kuis ini dari browser ini? Jika Anda belum membuat sertifikat, sertifikat tidak bisa lagi dibuat dari pengerjaan ini. |
-| `QuizIntroOpensLabel` *(popup)* | Opens | — |
-| `QuizIntroClosesLabel` *(popup)* | Closes | — |
-| `QuizIntroNotYetOpen` *(popup)* | This quiz opens on @date. | — |
-| `QuizIntroClosedNow` *(popup)* | This quiz closed on @date. It can no longer be started. | — |
-| `QuizBoardRank` | No. | No. |
-| `QuizBoardName` | Name | Nama |
-| `QuizBoardScore` | Score | Skor |
-| `QuizBoardDate` | Date | Tanggal |
-| `QuizBoardEmpty` | No certificates yet. | Belum ada sertifikat. |
-| `QuizTimeLeft` | Time left | Sisa waktu |
-| `QuizAnsweredLabel` | answered | dijawab |
-| `QuizCertExpired` | The time to create a certificate for this attempt has passed. | Batas waktu untuk membuat sertifikat dari percobaan ini sudah lewat. |
-| `QuizReprintTitle` | Reprint a certificate | Cetak ulang sertifikat |
-| `QuizReprintPrompt` | Enter the certificate number printed on your certificate. | Masukkan nomor sertifikat yang tercetak pada sertifikat Anda. |
-| `QuizReprintKeep` | Certificates can be reprinted for @days days after they were created. | Sertifikat bisa dicetak ulang selama @days hari sejak dibuat. |
-| `QuizReprintKeepForever` | Certificates can be reprinted at any time. | Sertifikat bisa dicetak ulang kapan saja. |
-| `QuizReprintLabel` | Certificate number | Nomor sertifikat |
-| `QuizReprintPlaceholder` | e.g. 7FE2CB6E32 | mis. 7FE2CB6E32 |
-| `QuizReprintButton` | Reprint PDF | Cetak ulang PDF |
-| `QuizReprintDone` | The certificate for @name has been downloaded. | Sertifikat atas nama @name sudah diunduh. |
-| `QuizReprintNotFound` | No certificate with this number was found. It may have been deleted because its storage period has ended. | Sertifikat dengan nomor ini tidak ditemukan. Data sertifikat mungkin sudah dihapus karena masa simpannya habis. |
-| `QuizReprintInvalid` | A certificate number has 10 characters (letters A–F and digits). | Nomor sertifikat terdiri dari 10 karakter (huruf A–F dan angka). |
-| `QuizLate` | The time limit had already passed when the answers were submitted. No certificate is available for this attempt. | Batas waktu sudah lewat saat jawaban dikirim. Sertifikat tidak tersedia untuk percobaan ini. |
-| `QuizInvalid` | This attempt is not valid or has expired. Please retake the quiz. | Percobaan ini tidak valid atau sudah kedaluwarsa. Silakan ikuti ulang kuis. |
-| `QuizSetupError` | This quiz cannot be used yet: the secret key could not be created. Set QuizSecret in the system settings. | Kuis belum dapat digunakan: kunci rahasia tidak dapat dibuat. Isi QuizSecret di setting sistem. |
+| Key | Default text |
+|---|---|
+| `QuizCorrected` | Here is the corrected quiz: right answers are highlighted in <b>bold</b>, wrong answers in <del class=\ |
+| `QuizButton` | Correction and score |
+| `QuizResult` | Right answers: <b>@right_answers out of @curr_question</b> |
+| `QuizScore` | Score: <b>@score out of @max_score</b> |
+| `QuizTrue` | True |
+| `QuizFalse` | False |
+| `QuizCertButton` | Get your certificate |
+| `QuizModalTitle` | Quiz completed |
+| `QuizNamePrompt` | Type your full name (not a nickname or initials) exactly as it should appear on the certificate. |
+| `QuizNamePlaceholder` | Full name |
+| `QuizClose` | Close |
+| `QuizCertHeading` | Certificate of Completion |
+| `QuizCertIntro` | This is to certify that |
+| `QuizCertCompleted` | has successfully completed |
+| `QuizCertScore` | Score |
+| `QuizCertDate` | Date |
+| `QuizCertNumber` | Certificate No. |
+| `QuizTimeUp` | Time is up. Your answers are being submitted… |
+| `QuizCertContinue` | Continue |
+| `QuizCertWarning` | The certificate can be created only once for this attempt, and the name cannot be changed afterwards. |
+| `QuizCertConfirm` | Create the certificate for this name? |
+| `QuizCertConfirmYes` | Yes, create certificate |
+| `QuizCertEdit` | Change name |
+| `QuizCertIssued` | Certificate issued to @name |
+| `QuizCertUsed` | The certificate for this attempt has already been issued to @name. Retake the quiz to get a new one. |
+| `QuizCertError` | The certificate could not be created. Check your connection and try again. |
+| `QuizRetake` | Retake quiz |
+| `QuizNotAnswered` | Not answered |
+| `QuizCorrectedMarks` | Here are your answers: correct ones are marked in green and wrong ones in red. The correct options are not shown. |
+| `QuizStorageError` | The certificate cannot be saved because the server cannot write data. Please contact the site administrator. |
+| `QuizMastery` | Mastery: <b>@percent%</b>. This percentage shows how much of the material you have mastered. |
+| `QuizCertMastery` | demonstrating @percent% mastery of the material |
+| `QuizTooLong` | This quiz has more than @max questions. Please split it into smaller quizzes. |
+| `QuizCertParts` | Mastery by part: @list. |
+| `QuizCategoryNote` | Mastery per part is the percentage of questions answered correctly in that part. |
+| `QuizCategoryRequired` | ✓ and ✕ mark the parts that count for the certificate. |
+| `QuizCertNeedHead` | Your certificate still needs: |
+| `QuizCertNeedRight` | @name: @right of @total right — at least @needed needed |
+| `QuizCertNeedPercent` | @name: @percent% — at least @pass% needed (@count more right answers) |
+| `QuizCertNeedPercentOne` | @name: @percent% — at least @pass% needed (1 more right answer) |
+| `QuizPenaltyInfo` | Penalty for wrong answers is on: -@points points for @count wrong answers. |
+| `QuizAwayWarning` | You left the quiz page for @seconds seconds (@count of 3). After the third time, your answers are submitted automatically. |
+| `QuizAwaySubmitted` | Your answers were submitted automatically because you left the quiz page 3 times. |
+| `QuizAwayCount` | You left the quiz page @count times for 10 seconds or more. |
+| `QuizJsRequired` | Please enable JavaScript to take this quiz. |
+| `QuizUnansweredTitle` | Not all questions are answered |
+| `QuizUnansweredOne` | 1 question is not answered yet: |
+| `QuizUnansweredMany` | @count questions are not answered yet: |
+| `QuizUnansweredMore` | and @count more |
+| `QuizUnansweredHint` | Answer every question before you submit. Tap a number to go to that question. |
+| `QuizUnansweredBack` | Back to the questions |
+| `QuizUnansweredBadge` | Not answered yet |
+| `QuizSubmitting` | Checking your answers… |
+| `QuizIntroQuestionsLabel` *(popup)* | Questions |
+| `QuizIntroTimeLabel` *(popup)* | Time |
+| `QuizIntroPenaltyLabel` *(popup)* | Penalty |
+| `QuizIntroPartsLabel` *(popup)* | Parts |
+| `QuizIntroCertificateLabel` *(popup)* | Certificate |
+| `QuizIntroPenaltyOff` *(popup)* | None |
+| `QuizIntroPenaltyOn` *(popup)* | Wrong answers lower the score (correction for guessing) |
+| `QuizIntroNoCertificate` *(popup)* | No certificate for this quiz |
+| `QuizIntroPartRight` *(popup)* | @name: at least @needed of @total right |
+| `QuizIntroPartPercent` *(popup)* | @name: at least @pass% |
+| `QuizIntroPartOpen` *(popup)* | @name: no minimum |
+| `QuizIntroPartFree` *(popup)* | @name: not required |
+| `QuizIntroReprintAsk` *(popup)* | Need an earlier certificate again? |
+| `QuizIntroReprintOpen` *(popup)* | Reprint it |
+| `QuizIntroBack` *(popup)* | Back |
+| `QuizIntroMinutes` *(popup)* | @minutes minutes |
+| `QuizIntroOneMinute` *(popup)* | 1 minute |
+| `QuizIntroNoTime` *(popup)* | No time limit |
+| `QuizIntroLeave` *(popup)* | Leaving this page for 10 seconds or more is counted. The third time, your answers are submitted automatically. |
+| `QuizIntroStart` *(popup)* | Start quiz |
+| `QuizIntroNotNow` *(popup)* | Not now |
+| `QuizIntroLast` *(popup)* | Your last score on this quiz: @score (@date) |
+| `QuizIntroViewLast` *(popup)* | View last result |
+| `QuizPreparing` *(popup)* | Preparing your quiz… |
+| `QuizCertKept` | You already have a certificate for this quiz with a higher or equal score (@score). That certificate has been downloaded. |
+| `QuizClosingSoon` | This quiz closes to new attempts at @time. You can continue this attempt until your own time runs out. |
+| `QuizClosedRunning` | This quiz is now closed to new attempts. You can continue this attempt until your own time runs out. |
+| `QuizClosingSoonNoLimit` | This quiz closes to new attempts at @time. You can continue this attempt until @end. At that time, your answers are sent automatically. |
+| `QuizClosedRunningNoLimit` | This quiz is now closed to new attempts. You can continue this attempt until @end. At that time, your answers are sent automatically. |
+| `QuizForget` | Remove my quiz data from this browser |
+| `QuizForgetConfirm` | Remove your results for this quiz from this browser? If you have not created your certificate yet, you can no longer create it from this attempt. |
+| `QuizForgetRemove` | Remove |
+| `QuizForgetCancel` | Cancel |
+| `QuizIntroOpensLabel` *(popup)* | Opens |
+| `QuizIntroClosesLabel` *(popup)* | Closes |
+| `QuizIntroNotYetOpen` *(popup)* | This quiz opens on @date. |
+| `QuizIntroClosedNow` *(popup)* | This quiz closed on @date. It can no longer be started. |
+| `QuizBoardRank` | No. |
+| `QuizBoardName` | Name |
+| `QuizBoardScore` | Score |
+| `QuizBoardDate` | Date |
+| `QuizBoardEmpty` | No certificates yet. |
+| `QuizTimeLeft` | Time left |
+| `QuizAnsweredLabel` | answered |
+| `QuizCertExpired` | The time to create a certificate for this attempt has passed. |
+| `QuizReprintTitle` | Reprint a certificate |
+| `QuizReprintPrompt` | Enter the certificate number printed on your certificate. |
+| `QuizReprintKeep` | Certificates can be reprinted for @days days after they were created. |
+| `QuizReprintKeepForever` | Certificates can be reprinted at any time. |
+| `QuizReprintLabel` | Certificate number |
+| `QuizReprintPlaceholder` | e.g. 7FE2CB6E32 |
+| `QuizReprintButton` | Reprint PDF |
+| `QuizReprintDone` | The certificate for @name has been downloaded. |
+| `QuizReprintNotFound` | No certificate with this number was found. It may have been deleted because its storage period has ended. |
+| `QuizReprintInvalid` | A certificate number has 10 characters (letters A–F and digits). |
+| `QuizLate` | The time limit had already passed when the answers were submitted. No certificate is available for this attempt. |
+| `QuizInvalid` | This attempt is not valid or has expired. Please retake the quiz. |
+| `QuizSetupError` | This quiz cannot be used yet: the secret key could not be created. Set QuizSecret in the system settings. |
