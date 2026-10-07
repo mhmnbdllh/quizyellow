@@ -1,6 +1,6 @@
 <?php
 // Quiz extension (customised build), based on YellowQuiz 0.9.1
-// - Settings per quiz in the quiz file: time, penalty, shuffle, review, pass, minimum
+// - Settings per quiz in the quiz file: time, penalty, shuffle, review, open, close; certificate requirements per category: "@ Name | pass: 80"
 // - Categories with "@ Name"; score is always 0-100, every question has the same value
 // - Every attempt gets a token signed by the server (random seed + start time)
 // - Answer values are tokens bound to the attempt, the page never reveals the key
@@ -9,7 +9,7 @@
 // - Only certificates are stored: one small file per quiz, deleted automatically
 
 class YellowQuiz {
-    const VERSION = "0.9.1-custom.12";
+    const VERSION = "0.9.1-custom.14";
     const GRACE = 60;                 // seconds accepted after the time limit (network delay, auto-submit)
     const MAX_LIFETIME = 604800;      // 7 days, longest time an attempt can stay open
     const CERT_WINDOW = 86400;        // a certificate can be created up to 1 day after submitting
@@ -24,12 +24,9 @@ class YellowQuiz {
     public function onLoad($yellow) {
         $this->yellow = $yellow;
         $this->yellow->system->setDefault("quizDirectory", "media/quiz/");
-        $this->yellow->system->setDefault("quizPass", "");
         $this->yellow->system->setDefault("quizCertificateKeepDays", "30");
         $this->yellow->system->setDefault("quizSecret", "");
         $this->yellow->system->setDefault("quizDataDirectory", "");
-        $this->yellow->system->setDefault("quizCertificateFile", "");
-        $this->yellow->system->setDefault("quizCertificateMinScore", "");
         $this->yellow->system->setDefault("quizMermaidUrl", "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js");
         $this->yellow->system->setDefault("quizChartUrl", "https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js");
         $this->yellow->language->setDefaults(array(
@@ -67,13 +64,13 @@ class YellowQuiz {
             "QuizMastery: Mastery: <b>@percent%</b>. This percentage shows how much of the material you have mastered.",
             "QuizCertMastery: demonstrating @percent% mastery of the material",
             "QuizTooLong: This quiz has more than @max questions. Please split it into smaller quizzes.",
-            "QuizCertNeed: Answer @count more questions correctly to unlock your certificate.",
-            "QuizCertNeedOne: Answer 1 more question correctly to unlock your certificate.",
-            "QuizCertNeedPass: The pass mark is @min points.",
-            "QuizCertNeedParts: Every part needs at least @minimum%. Below the minimum now: @list.",
             "QuizCertParts: Mastery by part: @list.",
             "QuizCategoryNote: Mastery per part is the percentage of questions answered correctly in that part.",
-            "QuizCategoryMinimum: Each part needs at least @minimum% for the certificate.",
+            "QuizCategoryRequired: ✓ and ✕ mark the parts that count for the certificate.",
+            "QuizCertNeedHead: Your certificate still needs:",
+            "QuizCertNeedRight: @name: @right of @total right — at least @needed needed",
+            "QuizCertNeedPercent: @name: @percent% — at least @pass% needed (@count more right answers)",
+            "QuizCertNeedPercentOne: @name: @percent% — at least @pass% needed (1 more right answer)",
             "QuizPenaltyInfo: Penalty for wrong answers is on: -@points points for @count wrong answers.",
             "QuizAwayWarning: You left the quiz page for @seconds seconds (@count of 3). After the third time, your answers are submitted automatically.",
             "QuizAwaySubmitted: Your answers were submitted automatically because you left the quiz page 3 times.",
@@ -94,9 +91,11 @@ class YellowQuiz {
             "QuizIntroCertificateLabel: Certificate",
             "QuizIntroPenaltyOff: None",
             "QuizIntroPenaltyOn: Wrong answers lower the score (correction for guessing)",
-            "QuizIntroPass: Score of at least @pass",
-            "QuizIntroPassMinimum: Score of at least @pass, and at least @minimum% in every part",
-            "QuizIntroPassNone: Every attempt submitted in time",
+            "QuizIntroNoCertificate: No certificate for this quiz",
+            "QuizIntroPartRight: @name: at least @needed of @total right",
+            "QuizIntroPartPercent: @name: at least @pass%",
+            "QuizIntroPartOpen: @name: no minimum",
+            "QuizIntroPartFree: @name: not required",
             "QuizIntroReprintAsk: Need an earlier certificate again?",
             "QuizIntroReprintOpen: Reprint it",
             "QuizIntroBack: Back",
@@ -309,12 +308,14 @@ class YellowQuiz {
                     continue;
                 }
                 if ($line[0]=="@") {
-                    $name = trim(substr($line, 1));
+                    $head = explode("|", substr($line, 1), 2);
+                    $name = trim($head[0]);
                     if ($name=="") continue;
+                    $pass = isset($head[1]) ? $this->parseCategoryPass($head[1]) : null;
                     if ($current>=0) $categories[$current]["outro"] = array_merge($categories[$current]["outro"], $pending);
                     elseif (count($pending)) $header = array_merge($header, $pending);
                     $pending = array();
-                    $categories[] = array("name"=>$name, "intro"=>array(), "questions"=>array(), "outro"=>array());
+                    $categories[] = array("name"=>$name, "pass"=>$pass, "intro"=>array(), "questions"=>array(), "outro"=>array());
                     $current = count($categories)-1;
                     continue;
                 }
@@ -329,7 +330,7 @@ class YellowQuiz {
                         $options = $trueFirst ? $tfStrings : array_reverse($tfStrings);
                     }
                     if ($current<0) { // questions before the first "@" line
-                        $categories[] = array("name"=>"", "intro"=>array(), "questions"=>array(), "outro"=>array());
+                        $categories[] = array("name"=>"", "pass"=>null, "intro"=>array(), "questions"=>array(), "outro"=>array());
                         $current = count($categories)-1;
                     }
                     $questions[] = array("text"=>$question, "options"=>$options, "tf"=>$isTrueFalse,
@@ -364,28 +365,27 @@ class YellowQuiz {
             "hasCategories"=>$named>0, "hasMermaid"=>$hasMermaid, "hasChart"=>$hasChart, "settings"=>$settings);
     }
 
-    // Read one "=" line. Named form: "time: 50, penalty: 1". Older positional form is still understood.
+    // Read one "=" line: "time: 50, penalty: 1"
     private function parseSettingLine($text, &$raw) {
-        if (strpos($text, ":")!==false) {
-            foreach (explode(",", $text) as $part) {
-                $pair = explode(":", $part, 2);
-                if (count($pair)!=2) continue;
-                $key = strtolower(trim($pair[0]));
-                $value = trim($pair[1]);
-                if ($key!="" && $value!="") $raw[$key] = $value;
-            }
-        } else { // positional form of versions up to custom.7: points, wrong, time, shuffle, single attempt, answers
-            $values = array_map("trim", explode(",", $text));
-            if (isset($values[1]) && $values[1]!="") $raw["penalty"] = ($values[1]=="%" || (is_numeric($values[1]) && floatval($values[1])!=0)) ? "1" : "0";
-            if (isset($values[2]) && $values[2]!="" && $values[2]!="%") $raw["time"] = $values[2];
-            if (isset($values[3]) && $values[3]!="") $raw["shuffle"] = $this->isOn($values[3]) ? "1" : "0";
-            if (isset($values[5]) && $values[5]!="") $raw["review"] = strtolower($values[5])=="all" ? "1" : (strtolower($values[5])=="none" ? "card" : "0");
+        foreach (explode(",", $text) as $part) {
+            $pair = explode(":", $part, 2);
+            if (count($pair)!=2) continue;
+            $key = strtolower(trim($pair[0]));
+            $value = trim($pair[1]);
+            if ($key!="" && $value!="") $raw[$key] = $value;
         }
+    }
+
+    // Certificate requirement of a category: "pass: 80" after the name, 0 to 100 (one decimal); null when missing or invalid
+    private function parseCategoryPass($text) {
+        if (!preg_match('/^\s*pass\s*:\s*(\d{1,3}(?:\.\d+)?)\s*$/i', $text, $matches)) return null;
+        $value = floatval($matches[1]);
+        return $value<=100 ? round($value, 1) : null;
     }
 
     // Turn raw settings into checked values, anything unknown or invalid falls back to the default
     private function getSettings($raw, $count) {
-        $settings = array("time"=>$count, "penalty"=>0, "shuffle"=>1, "review"=>0, "pass"=>$this->getDefaultPass(), "minimum"=>0, "open"=>0, "close"=>0);
+        $settings = array("time"=>$count, "penalty"=>0, "shuffle"=>1, "review"=>0, "open"=>0, "close"=>0);
         if (isset($raw["time"]) && preg_match('/^\d{1,5}$/', $raw["time"])) $settings["time"] = min(intval($raw["time"]), 10080);
         foreach (array("penalty", "shuffle", "review") as $key) {
             if (isset($raw[$key]) && ($raw[$key]==="0" || $raw[$key]==="1")) $settings[$key] = intval($raw[$key]);
@@ -393,11 +393,6 @@ class YellowQuiz {
         if (isset($raw["review"]) && strtolower($raw["review"])==="card") $settings["review"] = 2;
         foreach (array("open", "close") as $key) {
             if (isset($raw[$key])) $settings[$key] = $this->parseDateTime($raw[$key]);
-        }
-        foreach (array("pass", "minimum") as $key) {
-            if (isset($raw[$key]) && is_numeric($raw[$key]) && floatval($raw[$key])>=0 && floatval($raw[$key])<=100) {
-                $settings[$key] = round(floatval($raw[$key]), 1);
-            }
         }
         return $settings;
     }
@@ -432,15 +427,6 @@ class YellowQuiz {
         return date("j F Y, H:i", $time);
     }
 
-    // Pass mark of the site: QuizPass, else the older QuizCertificateMinScore, else 80
-    private function getDefaultPass() {
-        foreach (array("quizPass", "quizCertificateMinScore") as $key) {
-            $value = trim((string)$this->yellow->system->get($key));
-            if ($value!="" && is_numeric($value) && floatval($value)>=0 && floatval($value)<=100) return round(floatval($value), 1);
-        }
-        return 80;
-    }
-
     // The attempt is kept by the browser; quiz.js sets the same cookie, this header only saves one step
     private function sendAttemptCookie($quizId, $attempt, $minutes) {
         if (headers_sent()) return;
@@ -448,20 +434,31 @@ class YellowQuiz {
         @header("Set-Cookie: yquiz_".$quizId."=".$attempt["token"]."; Path=/; Max-Age=".$this->getLifetime($minutes)."; SameSite=Lax".$secure, false);
     }
 
-    // The pass mark that really decides: one category means its mastery is the score, so the higher number counts
-    private function getRules($quiz) {
-        $pass = $quiz["settings"]["pass"];
-        $minimum = $quiz["settings"]["minimum"];
-        if (!$quiz["hasCategories"]) { $pass = max($pass, $minimum); $minimum = 0; }
-        return array($pass, $minimum);
+    // Certificate requirements: the categories with "pass" (only named categories, only with questions).
+    // Without any, the quiz has no certificate.
+    private function getRequirements($quiz) {
+        $requirements = array();
+        if (!$quiz["hasCategories"]) return $requirements;
+        foreach ($quiz["categories"] as $index=>$category) {
+            if ($category["pass"]!==null && count($category["questions"])) $requirements[$index] = $category["pass"];
+        }
+        return $requirements;
+    }
+
+    // Fewest right answers that reach a pass mark in a category of $count questions (without wrong answers)
+    private function getNeededRight($pass, $count) {
+        for ($right=0; $right<=$count; $right++) {
+            if ($this->getPercent($right, $count)>=$pass) return $right;
+        }
+        return $count;
     }
 
     // Start popup: title, facts from the settings (English), instructions from "!" lines, last score, reprint
     private function renderIntro($quiz, $quizId, $title) {
         $settings = $quiz["settings"];
         $count = count($quiz["questions"]);
-        list($pass, $minimum) = $this->getRules($quiz);
-        $facts = array(); // label => value, shown as a plain two-column list
+        $requirements = $this->getRequirements($quiz);
+        $facts = array(); // label => value (or list of lines), shown as a plain two-column list
         $facts[$this->text("quizIntroQuestionsLabel")] = (string)$count;
         $facts[$this->text("quizIntroTimeLabel")] = $settings["time"]>0 ? ($settings["time"]==1 ? $this->text("quizIntroOneMinute") :
             str_replace("@minutes", $settings["time"], $this->text("quizIntroMinutes"))) : $this->text("quizIntroNoTime");
@@ -473,9 +470,22 @@ class YellowQuiz {
             foreach ($quiz["categories"] as $category) if (count($category["questions"])) $names[] = $category["name"];
             $facts[$this->text("quizIntroPartsLabel")] = implode(", ", $names);
         }
-        if ($pass<=0 && $minimum<=0) $certificate = $this->text("quizIntroPassNone");
-        elseif ($minimum>0) $certificate = str_replace(array("@pass", "@minimum"), array($this->formatNumber($pass), $this->formatNumber($minimum)), $this->text("quizIntroPassMinimum"));
-        else $certificate = str_replace("@pass", $this->formatNumber($pass), $this->text("quizIntroPass"));
+        if (!count($requirements)) {
+            $certificate = $this->text("quizIntroNoCertificate");
+        } else {
+            $certificate = array();
+            foreach ($quiz["categories"] as $index=>$category) {
+                $total = count($category["questions"]);
+                if (!$total) continue;
+                if (!isset($requirements[$index])) $line = $this->text("quizIntroPartFree");
+                elseif ($requirements[$index]<=0) $line = $this->text("quizIntroPartOpen");
+                elseif ($settings["penalty"]==1) $line = $this->text("quizIntroPartPercent");
+                else $line = $this->text("quizIntroPartRight");
+                $pass = isset($requirements[$index]) ? $requirements[$index] : 0;
+                $certificate[] = str_replace(array("@name", "@needed", "@total", "@pass"),
+                    array($category["name"], (string)$this->getNeededRight($pass, $total), (string)$total, $this->formatNumber($pass)), $line);
+            }
+        }
         $facts[$this->text("quizIntroCertificateLabel")] = $certificate;
         $texts = array("last"=>$this->text("quizIntroLast"), "viewLast"=>$this->text("quizIntroViewLast"), "preparing"=>$this->text("quizPreparing"),
             "forgetConfirm"=>$this->text("quizForgetConfirm"), "forgetRemove"=>$this->text("quizForgetRemove"),
@@ -492,7 +502,8 @@ class YellowQuiz {
         $output .= "<div class=\"quiz-intro-title\" role=\"heading\" aria-level=\"2\" id=\"quiz-{$quizId}-title\">".$this->e($title)."</div>\n";
         $output .= "<div class=\"quiz-intro-facts\">";
         foreach ($facts as $label=>$value) {
-            $output .= "<div class=\"quiz-intro-fact\"><span class=\"quiz-intro-label\">".$this->e($label)."</span><span class=\"quiz-intro-value\">".$this->e($value)."</span></div>";
+            $shown = is_array($value) ? implode("", array_map(function($line) { return "<span class=\"quiz-intro-line\">".$this->e($line)."</span>"; }, $value)) : $this->e($value);
+            $output .= "<div class=\"quiz-intro-fact\"><span class=\"quiz-intro-label\">".$this->e($label)."</span><span class=\"quiz-intro-value\">".$shown."</span></div>";
         }
         $output .= "</div>\n";
         if (count($quiz["instructions"])) {
@@ -701,9 +712,10 @@ class YellowQuiz {
             $totalUnits += $item["units"];
             if ($item["status"]=="wrong") $penaltyUnits += $item["penalty"];
             $c = $item["category"];
-            if (!isset($categoryStats[$c])) $categoryStats[$c] = array("units"=>0, "count"=>0);
+            if (!isset($categoryStats[$c])) $categoryStats[$c] = array("units"=>0, "count"=>0, "right"=>0);
             $categoryStats[$c]["units"] += $item["units"];
             $categoryStats[$c]["count"]++;
+            if ($item["status"]=="right") $categoryStats[$c]["right"]++;
         }
         $score = $this->getPercent($totalUnits, $count);
         $parts = array();
@@ -711,13 +723,12 @@ class YellowQuiz {
             if (!isset($categoryStats[$index])) continue;
             $parts[] = array($category["name"], $this->getPercent($categoryStats[$index]["units"], $categoryStats[$index]["count"]), $index);
         }
-        list($pass, $minimum) = $this->getRules($quiz);
-        $partsOk = true;
-        $below = array();
+        $requirements = $this->getRequirements($quiz);
+        $below = array(); // required categories that have not reached their pass mark
         foreach ($parts as $part) {
-            if ($minimum>0 && $part[1]<$minimum) { $partsOk = false; $below[] = $part; }
+            if (isset($requirements[$part[2]]) && $part[1]<$requirements[$part[2]]) $below[] = $part;
         }
-        $meets = $score>=$pass && $partsOk;
+        $meets = count($requirements)>0 && !count($below);
         $deadline = $this->getDeadline($settings, $start);
         $isLate = $deadline>0 && $submitted>$deadline+self::GRACE;
         $nonce = substr($this->sign("nonce|".$quizId."|".$seed."|".$start), 0, 20);
@@ -753,12 +764,12 @@ class YellowQuiz {
         if ($quiz["hasCategories"]) {
             $output .= "<div class=\"quiz-parts\">";
             foreach ($parts as $part) {
-                $mark = $minimum>0 ? ($part[1]>=$minimum ? " <span class=\"quiz-part-ok\">✓</span>" : " <span class=\"quiz-part-low\">✕</span>") : "";
+                $mark = !isset($requirements[$part[2]]) ? "" : ($part[1]>=$requirements[$part[2]] ? " <span class=\"quiz-part-ok\">✓</span>" : " <span class=\"quiz-part-low\">✕</span>");
                 $output .= "<span class=\"quiz-part\"><span class=\"quiz-part-name\">".$this->e($part[0])."</span> <span class=\"quiz-part-value\">".$this->formatNumber($part[1])."%</span>{$mark}</span>";
             }
             $output .= "</div>";
             $note = $this->text("quizCategoryNote");
-            if ($minimum>0) $note .= " ".str_replace("@minimum", $this->formatNumber($minimum), $this->text("quizCategoryMinimum"));
+            if (count($requirements)) $note .= " ".$this->text("quizCategoryRequired");
             $output .= "<p class=\"quiz-mastery\">".$this->e($note)."</p>";
         } else {
             $output .= "<p class=\"quiz-mastery\">".str_replace("@percent", $this->formatNumber($score), $this->text("quizMastery"))."</p>";
@@ -778,7 +789,13 @@ class YellowQuiz {
         }
         $output .= "<a class=\"quiz-btn quiz-btn-quiet quiz-retake\" href=\"".$this->e($this->getRetakeUrl($quizId))."\">".$this->e($this->text("quizRetake"))."</a>";
         $output .= "</div>";
-        if (!$meets) $output .= "<p class=\"quiz-cert-hint\">".$this->e($this->getCertificateHint($quiz, $items, $parts, $score, $pass, $minimum, $below))."</p>";
+        if (count($below)) {
+            $output .= "<div class=\"quiz-cert-hint\"><span class=\"quiz-cert-hint-head\">".$this->e($this->text("quizCertNeedHead"))."</span>";
+            foreach ($this->getCertificateHint($quiz, $items, $categoryStats, $requirements, $below) as $line) {
+                $output .= "<span class=\"quiz-cert-hint-line\">".$this->e($line)."</span>";
+            }
+            $output .= "</div>";
+        }
         if ($certState=="expired") $output .= "<p class=\"quiz-cert-hint\">".$this->e($this->text("quizCertExpired"))."</p>";
         $output .= "</div></div>\n";
         $output .= "<p class=\"quiz-forget-line\"><button type=\"button\" class=\"quiz-forget\">".$this->e($this->text("quizForget"))."</button></p>\n";
@@ -824,48 +841,33 @@ class YellowQuiz {
         return $output;
     }
 
-    // Explain what is missing for the certificate: fewest extra correct answers, pass mark, parts below the minimum
-    private function getCertificateHint($quiz, $items, $parts, $score, $pass, $minimum, $below) {
-        $count = count($items);
-        $categoryUnits = $categoryCount = $gains = array();
-        $totalUnits = 0;
-        foreach ($items as $item) {
-            $c = $item["category"];
-            if (!isset($categoryUnits[$c])) { $categoryUnits[$c] = 0; $categoryCount[$c] = 0; $gains[$c] = array(); }
-            $categoryUnits[$c] += $item["units"];
-            $categoryCount[$c]++;
-            $totalUnits += $item["units"];
-            if ($item["gain"]>0) $gains[$c][] = $item["gain"];
-        }
-        foreach ($gains as $c=>$list) rsort($gains[$c]);
-        $needed = 0;
-        if ($minimum>0) { // first lift every part to the minimum, using its own questions
-            foreach ($categoryUnits as $c=>$units) {
-                while ($this->getPercent($categoryUnits[$c], $categoryCount[$c])<$minimum && count($gains[$c])) {
-                    $gain = array_shift($gains[$c]);
-                    $categoryUnits[$c] += $gain;
-                    $totalUnits += $gain;
-                    $needed++;
-                }
+    // What is missing for the certificate: one line per required category below its pass mark.
+    // The count is the fewest extra right answers: the answers that gain the most come first
+    // (with penalty, a wrong answer made right gains more than an empty one).
+    private function getCertificateHint($quiz, $items, $categoryStats, $requirements, $below) {
+        $lines = array();
+        foreach ($below as $part) {
+            $c = $part[2];
+            $gains = array();
+            foreach ($items as $item) if ($item["category"]==$c && $item["gain"]>0) $gains[] = $item["gain"];
+            rsort($gains);
+            $units = $categoryStats[$c]["units"];
+            $needed = 0;
+            while ($this->getPercent($units, $categoryStats[$c]["count"])<$requirements[$c] && count($gains)) {
+                $units += array_shift($gains);
+                $needed++;
+            }
+            if ($quiz["settings"]["penalty"]==1) {
+                $lines[] = str_replace(array("@name", "@percent", "@pass", "@count"),
+                    array($part[0], $this->formatNumber($part[1]), $this->formatNumber($requirements[$c]), (string)$needed),
+                    $this->text($needed==1 ? "quizCertNeedPercentOne" : "quizCertNeedPercent"));
+            } else {
+                $lines[] = str_replace(array("@name", "@right", "@total", "@needed"),
+                    array($part[0], (string)$categoryStats[$c]["right"], (string)$categoryStats[$c]["count"],
+                    (string)$this->getNeededRight($requirements[$c], $categoryStats[$c]["count"])), $this->text("quizCertNeedRight"));
             }
         }
-        while ($this->getPercent($totalUnits, $count)<$pass) { // then reach the pass mark with the best remaining answers
-            $best = null;
-            foreach ($gains as $c=>$list) {
-                if (count($list) && ($best===null || $list[0]>$gains[$best][0])) $best = $c;
-            }
-            if ($best===null) break;
-            $totalUnits += array_shift($gains[$best]);
-            $needed++;
-        }
-        $text = $needed==1 ? $this->text("quizCertNeedOne") : str_replace("@count", (string)$needed, $this->text("quizCertNeed"));
-        if ($score<$pass) $text .= " ".str_replace("@min", $this->formatNumber($pass), $this->text("quizCertNeedPass"));
-        if (count($below)) {
-            $list = array();
-            foreach ($below as $part) $list[] = $part[0]." (".$this->formatNumber($part[1])."%)";
-            $text .= " ".str_replace(array("@minimum", "@list"), array($this->formatNumber($minimum), implode(", ", $list)), $this->text("quizCertNeedParts"));
-        }
-        return $text;
+        return $lines;
     }
 
     // Reprint form: on its own page ([quizcertificate]) with a title, or inside the start popup without one
@@ -980,7 +982,7 @@ class YellowQuiz {
         return substr($this->sign("answer|".$quizId."|".$seed."|".$question."|".$option), 0, 16);
     }
 
-    // Numbers are shown with at most one decimal; pass mark and minimum are compared with these shown numbers
+    // Numbers are shown with at most one decimal; pass marks are compared with these shown numbers
     private function formatNumber($number) {
         $text = (string)round((float)$number, 1);
         return $text=="-0" ? "0" : $text;
@@ -1015,8 +1017,6 @@ class YellowQuiz {
         if (!preg_match('/^[0-9A-F]{10}$/', $number) || $this->getSecret()=="") return array("ok"=>false, "error"=>"invalid");
         $directory = $this->getDataDirectory(false);
         $files = $directory!==false ? (array)glob($directory."*.csv") : array();
-        $legacy = $this->getLegacyFile();
-        if (is_file($legacy)) $files[] = $legacy;
         $record = $this->searchFiles($files, "certificate_no", $number);
         return $record ? $this->getCertificateData($record) : array("ok"=>false, "error"=>"not_found");
     }
@@ -1055,7 +1055,7 @@ class YellowQuiz {
                 "quiz_title"=>(string)$data["title"], "attempt"=>(string)$data["nonce"], "parts"=>$this->encodeParts($data["parts"]),
                 "identity"=>$identity);
             if (is_file($file) && filesize($file)>0 && !$this->hasCurrentHeader($file)) {
-                $ok = $this->migrateRecords($file, $best, $record); // file of an older version: rewrite it once with all columns
+                $ok = false; // a record file with other columns is never written to
             } elseif ($best) {
                 $ok = $this->replaceRecord($file, $best["certificate_no"], $record);
             } else {
@@ -1073,6 +1073,7 @@ class YellowQuiz {
         return substr($this->sign("identity|".preg_replace('/\s+/u', " ", trim($name))."|".$device), 0, 16);
     }
 
+    // True when the first line of a record file is exactly the current column list
     private function hasCurrentHeader($file) {
         $handle = @fopen($file, "r");
         if (!$handle) return false;
@@ -1105,15 +1106,6 @@ class YellowQuiz {
         return $this->writeContent($file, $content);
     }
 
-    private function migrateRecords($file, $best, $record) {
-        $records = array();
-        foreach ($this->readRecords($file) as $old) {
-            if (!$best || $old["certificate_no"]!==$best["certificate_no"]) $records[] = $old;
-        }
-        $records[] = $record;
-        return $this->writeRecords($file, $records);
-    }
-
     // Write a whole file through a temporary file, so readers never see a half written file
     private function writeContent($file, $content) {
         $temporary = $file.".tmp-".bin2hex(random_bytes(4));
@@ -1128,8 +1120,6 @@ class YellowQuiz {
     // Certificate number: 10 characters, made different when the same number is already stored
     private function getUniqueNumber($directory, $nonce, $name) {
         $files = (array)glob($directory."*.csv");
-        $legacy = $this->getLegacyFile();
-        if (is_file($legacy)) $files[] = $legacy;
         for ($round=0; $round<10; $round++) {
             $number = strtoupper(substr($this->sign("code|".$nonce."|".$name.($round ? "|".$round : "")), 0, 10));
             if (!$this->searchFiles($files, "certificate_no", $number)) break;
@@ -1203,13 +1193,11 @@ class YellowQuiz {
             "pct"=>is_numeric($record["percent"]) ? floatval($record["percent"]) : null, "parts"=>$this->decodeParts($record["parts"]));
     }
 
-    // Find a stored certificate of a quiz by column value, also looks in the registry of older versions
+    // Find a stored certificate of a quiz by column value
     private function findRecord($recordKey, $column, $value) {
         $directory = $this->getDataDirectory(false);
         $files = array();
         if ($directory!==false) $files[] = $directory.$recordKey.".csv";
-        $legacy = $this->getLegacyFile();
-        if (is_file($legacy)) $files[] = $legacy;
         return $this->searchFiles($files, $column, $value);
     }
 
@@ -1289,25 +1277,22 @@ class YellowQuiz {
         return $time===false || $time+$days*86400<time();
     }
 
-    // Remove expired certificate records and data of older versions, at most once per SWEEP_INTERVAL
+    // Remove expired certificate records, at most once per SWEEP_INTERVAL; a file with other columns is left untouched
     private function sweepRecords() {
-        $legacy = $this->getLegacyFile();
-        $directory = $this->getDataDirectory(is_file($legacy));
+        $directory = $this->getDataDirectory(false);
         if ($directory===false) return;
         $marker = $directory."index.html";
         if (is_file($marker) && time()-filemtime($marker)<self::SWEEP_INTERVAL) return;
         $lock = $this->lockData($directory, false);
         if (!$lock) return;
-        $files = (array)glob($directory."*.csv");
-        if (is_file($legacy)) $files[] = $legacy;
-        foreach ($files as $file) {
+        foreach ((array)glob($directory."*.csv") as $file) {
+            if (!$this->hasCurrentHeader($file)) continue;
             $records = $this->readRecords($file);
             if (count($records)!=$this->countLines($file)) $this->writeRecords($file, $records);
         }
         foreach ((array)glob($directory."*.tmp-*") as $file) {
             if (time()-filemtime($file)>3600) @unlink($file);
         }
-        $this->removeOldAttempts($directory."attempts");
         @touch($marker);
         $this->unlockData($lock);
     }
@@ -1320,22 +1305,6 @@ class YellowQuiz {
         while (fgetcsv($handle, 0, ",", "\"", "\\")!==false) $count++;
         fclose($handle);
         return max(0, $count);
-    }
-
-    // Delete submission records of version custom.6, in small portions
-    private function removeOldAttempts($path) {
-        if (!is_dir($path)) return;
-        $removed = 0;
-        foreach ((array)@scandir($path) as $day) {
-            if (!preg_match('/^\d{8}$/', $day)) continue;
-            foreach ((array)@scandir($path."/".$day) as $file) {
-                if ($file=="." || $file=="..") continue;
-                @unlink($path."/".$day."/".$file);
-                if (++$removed>=2000) return;
-            }
-            @rmdir($path."/".$day);
-        }
-        @rmdir($path);
     }
 
     // Data directory for certificate records, closed to web access
@@ -1375,12 +1344,6 @@ class YellowQuiz {
         $name = strtolower(preg_replace('/\.[A-Za-z0-9]+$/', "", $fileName));
         $name = trim(preg_replace('/[^a-z0-9]+/', "-", $name), "-");
         return substr($name, 0, 60)."-".substr($quizId, 0, 6);
-    }
-
-    // Certificate registry of versions custom.1 to custom.6, only read and cleaned
-    private function getLegacyFile() {
-        $file = trim((string)$this->yellow->system->get("quizCertificateFile"));
-        return $file!="" ? $file : dirname(__FILE__)."/quiz-certificates.csv";
     }
 
     // Return secret: QuizSecret setting (16+ characters) or a random key stored in quiz-secret.php
@@ -1475,10 +1438,6 @@ class YellowQuiz {
 
     private function getQuery($key) {
         return isset($_GET[$key]) && is_string($_GET[$key]) ? $_GET[$key] : "";
-    }
-
-    private function isOn($value) {
-        return in_array(strtolower(trim((string)$value)), array("1", "yes", "true", "on"));
     }
 
     private function e($text) {
