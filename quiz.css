@@ -495,6 +495,10 @@
     color: #fff;
     font-size: .9rem;
 }
+/* what the certificate still needs: a heading and one line per required category below its pass mark */
+.quiz-container .quiz-summary .quiz-cert-hint-head { display: block; margin: 0 0 .3rem; font-weight: 700; }
+.quiz-container .quiz-summary .quiz-cert-hint-line { display: block; }
+.quiz-container .quiz-summary .quiz-cert-hint-line + .quiz-cert-hint-line { margin-top: .2rem; }
 
 /* ---------- corrected questions ---------- */
 .quiz-container .quiz-corrected .quiz-option { cursor: default; }
@@ -646,6 +650,9 @@
 }
 .quiz-container.quiz-intro .quiz-intro-label { display: block; color: #6b7080; font-size: .88rem; font-weight: 400; }
 .quiz-container.quiz-intro .quiz-intro-value { display: block; color: #1f2433; font-size: .92rem; font-weight: 600; line-height: 1.45; }
+/* one line per category in the certificate row */
+.quiz-container.quiz-intro .quiz-intro-line { display: block; }
+.quiz-container.quiz-intro .quiz-intro-line + .quiz-intro-line { margin-top: .2rem; }
 .quiz-container.quiz-intro .quiz-intro-closed { margin: 0 0 1.1rem; color: #1f2433; font-size: .92rem; font-weight: 600; }
 .quiz-container.quiz-intro .quiz-intro-forget { margin: .5rem 0 0; font-size: .85rem; color: #6b7080; }
 .quiz-container.quiz-intro .quiz-intro-text { margin: 0 0 1rem; font-size: .95rem; line-height: 1.6; }
@@ -758,10 +765,31 @@
 .quiz-container .quiz-audio { display: block; width: 100%; }
 .quiz-container .quiz-video { display: block; max-width: 100%; height: auto; border-radius: 12px; background: #10131f; }
 .quiz-container .quiz-video::-webkit-media-controls-fullscreen-button { display: none; }
-.quiz-container .quiz-diagram { overflow-x: auto; }
+/* diagrams and charts get more room than the quiz column. quiz.js adds is-wide with the width and the shift that
+   centre the block on the screen (90% of its width, at most 1400 px; 97.5% on phones). Without is-wide, for example
+   before quiz.js has measured or when a theme would cut the block off, it keeps the width of the quiz. */
+.quiz-container .quiz-diagram,
+.quiz-container .quiz-chart { position: relative; box-sizing: border-box; width: 100%; max-width: 100%; }
+.quiz-container .quiz-diagram.is-wide,
+.quiz-container .quiz-chart.is-wide {
+    width: var(--quiz-wide-width, 100%);
+    max-width: none;
+    margin-left: var(--quiz-wide-shift, 0px);
+    margin-right: 0;
+}
+/* a diagram keeps its own size and stays centred; one that is still too wide scrolls inside its block, never the page */
+.quiz-container .quiz-diagram { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; }
 .quiz-container .quiz-mermaid { margin: 0; padding: 0; border: 0; background: none; text-align: center; white-space: pre; }
 .quiz-container .quiz-mermaid[data-processed] { white-space: normal; }
-.quiz-container .quiz-chart { position: relative; max-width: 42rem; }
+/* centred with auto margins, because the quiz forces left text alignment against themes; Mermaid limits the
+   drawing to its own size, so a small diagram stays small */
+.quiz-container .quiz-diagram svg { display: block; margin-left: auto; margin-right: auto; height: auto; }
+/* a chart fills its block: 2:1 (3:2 on phones), never taller than three quarters of the screen */
+.quiz-container .quiz-chart { aspect-ratio: 2 / 1; max-height: 75vh; }
+.quiz-container .quiz-chart canvas { display: block; }
+@supports not (aspect-ratio: 2 / 1) {
+    .quiz-container .quiz-chart { height: 22rem; }
+}
 .quiz-container .quiz-code { overflow-x: auto; padding: .8rem 1rem; border-radius: 10px; background: #f3f5fa; font-size: .9rem; }
 .quiz-container .quiz-option .quiz-media { margin: .4rem 0; }
 
@@ -807,6 +835,7 @@
 }
 .quiz-container .quiz-reprint-message.is-ok { background: var(--quiz-green-tint); color: var(--quiz-green); }
 @media (max-width: 600px) {
+    .quiz-container .quiz-chart { aspect-ratio: 3 / 2; }
     .quiz-intro .quiz-intro-layer { align-items: flex-end; padding: 0; }
     .quiz-intro .quiz-intro-card { max-height: 92vh; margin: auto 0 0; padding: 1.5rem 1.15rem 1.15rem; border-radius: 14px 14px 0 0; }
     .quiz-container.quiz-intro .quiz-intro-title { font-size: 1.25rem; }
